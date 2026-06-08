@@ -10,12 +10,15 @@ Browser extension (MV3) built with Plasmo. Favorites-only: a **SavedSite** is cr
 
 ```
 src/
+  style.css              ← single source of truth for all design tokens (ADR 0007)
   background.ts          ← Plasmo service worker (thin: route + write only)
   contents/              ← Plasmo content scripts
     fav-button.tsx       ← injects the fav button; reads metadata as TEXT ONLY
   components/
     ui/                  ← shadcn primitives (never hand-write what shadcn provides)
     [feature]/           ← composed feature components
+  tabs/
+    design-system.tsx    ← dev-only design-system gallery (Plasmo tab route; gated on NODE_ENV)
   lib/
     categorizer.ts       ← pure: (type, siteName, domain) → Category
     metadata-extractor.ts← pure DOM reader; returns text strings only
@@ -41,9 +44,19 @@ import { Button } from '../../components/ui/button' // ✗
 
 `strict: true` + `noImplicitAny: true` + `noUncheckedIndexedAccess: true`. No exceptions. No `any` casts without a comment explaining why.
 
+## Package manager
+
+Use **pnpm** for all installs and script runs. Never use `npm install` or `yarn`.
+
+```sh
+pnpm install          # install deps
+pnpm add <pkg>        # add a package
+pnpm run dev          # run scripts
+```
+
 ## Linting + formatting
 
-Biome. Run `npx @biomejs/biome check --write .` before committing. Pre-commit hook (lint-staged + simple-git-hooks) runs this automatically on staged files.
+Biome. Run `pnpm run lint` before committing. Pre-commit hook (lint-staged + simple-git-hooks) runs this automatically on staged files.
 
 ## UI components
 
@@ -51,7 +64,34 @@ Use the `/shadcn` skill to install shadcn/ui primitives into `src/components/ui/
 
 - Style: **New York**
 - Base color: **Zinc**
+- Border radius: **0.5rem**
 - Dark mode: `darkMode: 'media'` (follows OS preference; no manual toggle in v1)
+
+### Design tokens — single source of truth (ADR 0007)
+
+All design tokens live in **`src/style.css`** and nowhere else. The four tunable axes — color palette, font family, font size scale, border radius — are CSS custom properties declared once in that file.
+
+- Components consume tokens via Tailwind utilities or `var(--token)`. **Never** hardcode a hex color, px/rem font size, or radius value inside a component.
+- Do **not** split tokens into `tailwind.config` or per-component styles. If a value belongs to the palette/typography/radius system, it is a token in `src/style.css`.
+- Every Plasmo surface (popup, options, tab routes, content-script UI) imports the same `src/style.css`. No second stylesheet.
+
+### Component modularity
+
+Components must be repositionable, restylable, and reparentable without edits to their internals:
+
+- A component never sets its own outer position or outer margin. **Parents own layout** (placement, spacing, grid/flex). Children own only their internal composition.
+- Style variants come from `props` + `cva` (class-variance-authority), never from conditional inline styles or hardcoded values.
+- No component assumes a specific parent or DOM ancestor.
+- Pass layout-affecting classes via a `className` prop merged with `cn()`; never bake outer-layout classes into the component.
+
+## Design system page (dev-only)
+
+`src/tabs/design-system.tsx` is a Plasmo tab route that renders every primitive and composed component against the live tokens.
+
+- **Gate:** render content only when `process.env.NODE_ENV === 'development'`. Production builds render nothing.
+- **Not linked** from any user surface (popup, gallery, content script). Reachable only by typing the tab URL directly.
+- **Mirror only:** imports real components and reads real tokens from `src/style.css`. Never redefine styles or tokens inside this page.
+- When you add or change a primitive, add it to this page in the same change.
 
 ## State management
 
@@ -96,7 +136,8 @@ PermissionGate, Grid, Search, and CategoryFilter: verify manually in v1.
 |---|---|
 | `/shadcn` | Adding any new UI primitive |
 | `/tdd` | Building or modifying the four tested modules |
-| `/frontend-design` | Building any new page or major UI surface |
+| `/frontend-design` | Building any new page or major UI surface (including the design-system page) |
+| `/react-shadcn-stack` | Setting up `src/style.css` tokens, Tailwind, or scaffolding Plasmo surfaces |
 | `/code-review` | Before merging any PR |
 
 ## Storage rules
@@ -113,3 +154,4 @@ PermissionGate, Grid, Search, and CategoryFilter: verify manually in v1.
 - **ADR 0004** — Vitest as the test harness
 - **ADR 0005** — shadcn New York + Zinc
 - **ADR 0006** — Zod message contracts
+- **ADR 0007** — single-source design tokens (`src/style.css`) + dev-only design-system page + component modularity

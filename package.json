@@ -1,0 +1,52 @@
+{
+  "name": "url-gallery",
+  "displayName": "URL Gallery",
+  "version": "0.0.1",
+  "description": "A visual gallery of fav-clicked sites",
+  "author": "thbueno",
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build",
+    "package": "plasmo package",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check --write ."
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dexie": "^4.4.3",
+    "lucide-react": "^1.17.0",
+    "plasmo": "0.90.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/chrome": "^0.0.287",
+    "@types/node": "^22",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "lint-staged": "^15.2.10",
+    "postcss": "^8.4.49",
+    "simple-git-hooks": "^2.11.1",
+    "tailwindcss": "^3.4.16",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": "biome check --write --no-errors-on-unmatched"
+  },
+  "manifest": {
+    "permissions": ["storage", "tabs"],
+    "optional_host_permissions": ["https://*/*"]
+  }
+}
