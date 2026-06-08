@@ -4,11 +4,12 @@ import { useVirtualizer } from "@tanstack/react-virtual"
 import { BookmarkIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
+import { CategoryFilter } from "@/components/gallery/CategoryFilter"
 import { SiteCard } from "@/components/gallery/SiteCard"
 import { Skeleton } from "@/components/ui/skeleton"
+import type { Category } from "@/lib/categorizer"
 import { savedSiteStore } from "@/lib/store"
 import type { SavedSite } from "@/lib/store"
-import { cn } from "@/lib/utils"
 import { useGalleryStore } from "@/store/galleryStore"
 
 // ── Column count from container width ────────────────────────────────────────
@@ -40,6 +41,7 @@ export default function GalleryPage() {
   const isLoading = useGalleryStore((s) => s.isLoading)
   const load = useGalleryStore((s) => s.load)
   const setActiveCategory = useGalleryStore((s) => s.setActiveCategory)
+  const updateSiteCategory = useGalleryStore((s) => s.updateSiteCategory)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const cols = useColumnCount(scrollRef)
@@ -64,6 +66,12 @@ export default function GalleryPage() {
     window.open(site.url, "_blank")
   }
 
+  async function handleCategoryChange(site: SavedSite, category: Category) {
+    if (site.id !== undefined) {
+      await updateSiteCategory(site.id, category)
+    }
+  }
+
   const totalCount = categories.reduce((n, c) => n + c.count, 0)
 
   return (
@@ -75,44 +83,12 @@ export default function GalleryPage() {
           <span className="text-sm font-semibold tracking-tight">URL Gallery</span>
         </div>
 
-        <nav className="px-2 pb-4">
-          <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Categories
-          </p>
-
-          <button
-            type="button"
-            onClick={() => setActiveCategory(null)}
-            className={cn(
-              "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
-              activeCategory === null
-                ? "bg-accent font-medium text-accent-foreground"
-                : "text-sidebar-foreground hover:bg-accent/60"
-            )}
-          >
-            <span>All</span>
-            <span className="tabular-nums text-xs text-muted-foreground">{totalCount}</span>
-          </button>
-
-          {categories.map((cat) => (
-            <button
-              key={cat.name}
-              type="button"
-              onClick={() => setActiveCategory(cat.name === activeCategory ? null : cat.name)}
-              className={cn(
-                "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
-                activeCategory === cat.name
-                  ? "bg-accent font-medium text-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-accent/60"
-              )}
-            >
-              <span className="truncate">{cat.name}</span>
-              <span className="ml-2 shrink-0 tabular-nums text-xs text-muted-foreground">
-                {cat.count}
-              </span>
-            </button>
-          ))}
-        </nav>
+        <CategoryFilter
+          categories={categories}
+          activeCategory={activeCategory}
+          totalCount={totalCount}
+          onSelect={setActiveCategory}
+        />
       </aside>
 
       {/* ── Main ── */}
@@ -178,7 +154,12 @@ export default function GalleryPage() {
                       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                     >
                       {rowSites.map((site) => (
-                        <SiteCard key={site.id ?? site.url} site={site} onClick={handleCardClick} />
+                        <SiteCard
+                          key={site.id ?? site.url}
+                          site={site}
+                          onClick={handleCardClick}
+                          onCategoryChange={handleCategoryChange}
+                        />
                       ))}
                     </div>
                   </div>

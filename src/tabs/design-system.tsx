@@ -2,10 +2,12 @@ import "@/style.css"
 
 import {
   BookmarkIcon,
+  ChevronDownIcon,
   ExternalLinkIcon,
   GridIcon,
   LayersIcon,
   PaletteIcon,
+  TagIcon,
   TypeIcon,
 } from "lucide-react"
 
@@ -20,6 +22,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
@@ -239,6 +249,7 @@ const NAV_ITEMS = [
   { id: "inputs", label: "Inputs", icon: TypeIcon },
   { id: "cards", label: "Cards", icon: LayersIcon },
   { id: "feedback", label: "Feedback", icon: GridIcon },
+  { id: "dropdown", label: "Dropdown Menu", icon: ChevronDownIcon },
   { id: "gallery-preview", label: "Gallery Preview", icon: GridIcon },
 ]
 
@@ -517,6 +528,49 @@ export default function DesignSystem() {
                   <span className="text-[var(--text-sm)]">Reading</span>
                 </div>
               </div>
+            </DemoBox>
+          </Section>
+
+          {/* ── Components: Dropdown Menu ─────────────────────────── */}
+          <Section id="dropdown" label="Components" title="Dropdown Menu">
+            <DemoBox label="Category override (primary use-case)">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 rounded-md border bg-muted px-2.5 py-1.5 text-sm transition-colors hover:bg-accent"
+                  >
+                    <TagIcon className="size-3.5 text-muted-foreground" />
+                    Dev Tools
+                    <ChevronDownIcon className="size-3.5 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-36">
+                  <DropdownMenuLabel className="text-[10px]">Change category</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {[
+                    "Video",
+                    "Music",
+                    "News",
+                    "Social",
+                    "Shopping",
+                    "Dev Tools",
+                    "Docs",
+                    "Design",
+                    "Uncategorized",
+                  ].map((cat) => (
+                    <DropdownMenuItem
+                      key={cat}
+                      className={cn(
+                        "text-xs",
+                        cat === "Dev Tools" && "font-medium text-accent-foreground"
+                      )}
+                    >
+                      {cat}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </DemoBox>
           </Section>
 

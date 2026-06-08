@@ -16,6 +16,7 @@ interface GalleryStore {
   load: () => Promise<void>
   setSearchQuery: (query: string) => Promise<void>
   setActiveCategory: (category: string | null) => Promise<void>
+  updateSiteCategory: (id: number, category: string) => Promise<void>
 }
 
 async function querySites(query: string, category: string | null): Promise<SavedSite[]> {
@@ -65,5 +66,14 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
     set({ activeCategory: category, isLoading: true })
     const sites = await querySites(get().searchQuery, category)
     set({ sites, isLoading: false })
+  },
+
+  async updateSiteCategory(id, category) {
+    await savedSiteStore.update(id, { category })
+    const [sites, categories] = await Promise.all([
+      querySites(get().searchQuery, get().activeCategory),
+      queryCategories(),
+    ])
+    set({ sites, categories })
   },
 }))

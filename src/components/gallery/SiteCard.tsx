@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react"
 
+import { TagIcon } from "lucide-react"
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import type { Category } from "@/lib/categorizer"
+import { ALL_CATEGORIES } from "@/lib/categorizer"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
 
 interface SiteCardProps {
   site: SavedSite
   onClick: (site: SavedSite) => void
+  onCategoryChange?: (site: SavedSite, category: Category) => void
   className?: string
 }
 
@@ -28,7 +41,7 @@ function getDomain(url: string): string {
   }
 }
 
-export function SiteCard({ site, onClick, className }: SiteCardProps) {
+export function SiteCard({ site, onClick, onCategoryChange, className }: SiteCardProps) {
   const thumbUrl = useBlobUrl(site.thumb)
   const domain = getDomain(site.url)
 
@@ -67,11 +80,52 @@ export function SiteCard({ site, onClick, className }: SiteCardProps) {
         style={{ background: "var(--thumb-scrim)" }}
       >
         <p className="truncate text-xs font-medium leading-tight text-white">{site.title}</p>
-        <div className="mt-1 flex items-center gap-1.5">
+        <div className="mt-1 flex items-center justify-between gap-1.5">
           <span className="min-w-0 truncate text-[10px] text-white/60">{domain}</span>
-          <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[10px] leading-none text-white/80">
-            {site.category}
-          </span>
+
+          {onCategoryChange ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                asChild
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <span
+                  className={cn(
+                    "shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[10px] leading-none text-white/80",
+                    "opacity-0 transition-opacity group-hover:opacity-100",
+                    "flex items-center gap-1 cursor-pointer hover:bg-white/20"
+                  )}
+                >
+                  <TagIcon size={9} />
+                  {site.category}
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                <DropdownMenuLabel className="text-[10px]">Change category</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {ALL_CATEGORIES.map((cat) => (
+                  <DropdownMenuItem
+                    key={cat}
+                    className={cn(
+                      "text-xs",
+                      cat === site.category && "font-medium text-accent-foreground"
+                    )}
+                    onSelect={(e) => {
+                      e.stopPropagation()
+                      onCategoryChange(site, cat)
+                    }}
+                  >
+                    {cat}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[10px] leading-none text-white/80">
+              {site.category}
+            </span>
+          )}
         </div>
       </div>
     </button>

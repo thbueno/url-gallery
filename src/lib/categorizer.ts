@@ -9,6 +9,18 @@ export type Category =
   | "Design"
   | "Uncategorized"
 
+export const ALL_CATEGORIES: Category[] = [
+  "Video",
+  "Music",
+  "News",
+  "Social",
+  "Shopping",
+  "Dev Tools",
+  "Docs",
+  "Design",
+  "Uncategorized",
+]
+
 export function categorize(
   type: string | undefined,
   _siteName: string | undefined,
