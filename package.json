@@ -56,6 +56,7 @@
     "*.{ts,tsx}": "biome check --write --no-errors-on-unmatched"
   },
   "manifest": {
+    "action": {},
     "permissions": [
       "storage",
       "tabs"

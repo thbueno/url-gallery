@@ -1,7 +1,7 @@
 import "@/style.css"
 
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { BookmarkIcon, ClockIcon, FlameIcon, SearchIcon, XIcon } from "lucide-react"
+import { BookmarkIcon, ClockIcon, FlameIcon, ImageIcon, SearchIcon, XIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 import { CategoryFilter } from "@/components/gallery/CategoryFilter"
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Category } from "@/lib/categorizer"
+import { ALL_CATEGORIES } from "@/lib/categorizer"
 import { savedSiteStore } from "@/lib/store"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
@@ -26,6 +27,7 @@ function useColumnCount(containerRef: React.RefObject<HTMLDivElement | null>): n
     const el = containerRef.current
     if (!el) return
     const observer = new ResizeObserver(([entry]) => {
+      if (!entry) return
       const w = entry.contentRect.width
       setCols(Math.max(1, Math.floor((w + CARD_GAP) / (MIN_CARD_WIDTH + CARD_GAP))))
     })
@@ -80,6 +82,88 @@ function RevisitStrip({
   )
 }
 
+// ── Permission-declined banner ────────────────────────────────────────────────
+
+function PermissionBanner({ onDismiss }: { onDismiss: () => void }) {
+  const [requesting, setRequesting] = useState(false)
+
+  async function handleEnable() {
+    setRequesting(true)
+    try {
+      const granted = await chrome.permissions.request({ origins: ["https://*/*"] })
+      if (granted) {
+        await chrome.storage.local.remove("permissionDeclined")
+        onDismiss()
+      }
+    } finally {
+      setRequesting(false)
+    }
+  }
+
+  return (
+    <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/40 px-4 py-2">
+      <ImageIcon size={13} className="shrink-0 text-muted-foreground" />
+      <span className="flex-1 text-xs text-muted-foreground">
+        Thumbnails are showing page icons.{" "}
+        <button
+          type="button"
+          disabled={requesting}
+          onClick={handleEnable}
+          className="font-medium text-foreground underline-offset-2 hover:underline disabled:opacity-50"
+        >
+          Enable full thumbnails
+        </button>
+      </span>
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss"
+        className="text-muted-foreground hover:text-foreground"
+      >
+        <XIcon size={13} />
+      </button>
+    </div>
+  )
+}
+
+// ── Dev seed ──────────────────────────────────────────────────────────────────
+
+const SEED_DOMAINS = [
+  "github.com",
+  "stackoverflow.com",
+  "youtube.com",
+  "twitter.com",
+  "reddit.com",
+  "figma.com",
+  "docs.google.com",
+  "npmjs.com",
+  "medium.com",
+  "vercel.com",
+]
+
+async function seedDatabase(): Promise<void> {
+  const now = Date.now()
+  const DAY = 24 * 60 * 60 * 1000
+  for (let i = 0; i < 1000; i++) {
+    const domain = SEED_DOMAINS[i % SEED_DOMAINS.length] ?? "example.com"
+    const category = ALL_CATEGORIES[i % ALL_CATEGORIES.length] ?? "Uncategorized"
+    await savedSiteStore.add({
+      url: `https://${domain}/item-${i}`,
+      title: `Seeded Site #${i + 1} — ${domain}`,
+      favicon: null,
+      thumb: null,
+      category,
+    })
+  }
+  // Backdate the last 20 records to 8 days ago — exercises the resurface strip
+  const all = await savedSiteStore.getAll()
+  for (const site of all.slice(-20)) {
+    if (site.id !== undefined) {
+      await savedSiteStore.update(site.id, { savedAt: now - 8 * DAY })
+    }
+  }
+}
+
 // ── Gallery page ─────────────────────────────────────────────────────────────
 
 export default function GalleryPage() {
@@ -96,6 +180,15 @@ export default function GalleryPage() {
   const setSortOrder = useGalleryStore((s) => s.setSortOrder)
   const updateSiteCategory = useGalleryStore((s) => s.updateSiteCategory)
   const togglePin = useGalleryStore((s) => s.togglePin)
+
+  const [showPermissionBanner, setShowPermissionBanner] = useState(false)
+  const [isSeeding, setIsSeeding] = useState(false)
+
+  useEffect(() => {
+    chrome.storage.local.get("permissionDeclined", (result) => {
+      if (result.permissionDeclined === true) setShowPermissionBanner(true)
+    })
+  }, [])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const cols = useColumnCount(scrollRef)
@@ -218,7 +311,28 @@ export default function GalleryPage() {
           >
             {sites.length} site{sites.length !== 1 ? "s" : ""}
           </span>
+
+          {process.env.NODE_ENV === "development" && (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={isSeeding}
+              className="h-7 px-2 text-[11px] text-muted-foreground"
+              onClick={async () => {
+                setIsSeeding(true)
+                await seedDatabase()
+                await load()
+                setIsSeeding(false)
+              }}
+            >
+              {isSeeding ? "Seeding…" : "Seed DB"}
+            </Button>
+          )}
         </div>
+
+        {showPermissionBanner && (
+          <PermissionBanner onDismiss={() => setShowPermissionBanner(false)} />
+        )}
 
         {/* Scroll container — bounded height required for virtualization */}
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto p-4">
