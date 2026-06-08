@@ -1,18 +1,19 @@
 import "@/style.css"
 
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { BookmarkIcon, SearchIcon, XIcon } from "lucide-react"
+import { BookmarkIcon, ClockIcon, FlameIcon, SearchIcon, XIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 import { CategoryFilter } from "@/components/gallery/CategoryFilter"
 import { SiteCard } from "@/components/gallery/SiteCard"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Category } from "@/lib/categorizer"
 import { savedSiteStore } from "@/lib/store"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
-import { useGalleryStore } from "@/store/galleryStore"
+import { type SortOrder, useGalleryStore } from "@/store/galleryStore"
 
 // ── Column count from container width ────────────────────────────────────────
 
@@ -34,18 +35,67 @@ function useColumnCount(containerRef: React.RefObject<HTMLDivElement | null>): n
   return cols
 }
 
+// ── Revisit strip ─────────────────────────────────────────────────────────────
+
+function RevisitStrip({
+  sites,
+  onOpen,
+}: {
+  sites: SavedSite[]
+  onOpen: (site: SavedSite) => void
+}) {
+  const [collapsed, setCollapsed] = useState(false)
+  if (sites.length === 0) return null
+  return (
+    <div className="mb-4 shrink-0">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <ClockIcon size={12} className="text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">Revisit</span>
+          <span className="tabular-nums text-[10px] text-muted-foreground/60">
+            — saved but never opened
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          className="text-[10px] text-muted-foreground/60 underline-offset-2 hover:underline"
+        >
+          {collapsed ? "show" : "hide"}
+        </button>
+      </div>
+      {!collapsed && (
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {sites.map((site) => (
+            <SiteCard
+              key={site.id ?? site.url}
+              site={site}
+              onClick={onOpen}
+              className="w-40 shrink-0 aspect-[4/3]"
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Gallery page ─────────────────────────────────────────────────────────────
 
 export default function GalleryPage() {
   const sites = useGalleryStore((s) => s.sites)
   const categories = useGalleryStore((s) => s.categories)
+  const resurfaceSites = useGalleryStore((s) => s.resurfaceSites)
   const activeCategory = useGalleryStore((s) => s.activeCategory)
+  const sortOrder = useGalleryStore((s) => s.sortOrder)
   const isLoading = useGalleryStore((s) => s.isLoading)
   const searchQuery = useGalleryStore((s) => s.searchQuery)
   const load = useGalleryStore((s) => s.load)
   const setSearchQuery = useGalleryStore((s) => s.setSearchQuery)
   const setActiveCategory = useGalleryStore((s) => s.setActiveCategory)
+  const setSortOrder = useGalleryStore((s) => s.setSortOrder)
   const updateSiteCategory = useGalleryStore((s) => s.updateSiteCategory)
+  const togglePin = useGalleryStore((s) => s.togglePin)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const cols = useColumnCount(scrollRef)
@@ -76,6 +126,16 @@ export default function GalleryPage() {
     }
   }
 
+  async function handlePinToggle(site: SavedSite, pinned: boolean) {
+    if (site.id !== undefined) {
+      await togglePin(site.id, pinned)
+    }
+  }
+
+  function handleSortOrder(order: SortOrder) {
+    setSortOrder(order)
+  }
+
   const totalCount = categories.reduce((n, c) => n + c.count, 0)
 
   return (
@@ -98,7 +158,7 @@ export default function GalleryPage() {
       {/* ── Main ── */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-2.5">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-2.5">
           <div className="relative flex-1">
             <SearchIcon
               size={13}
@@ -121,6 +181,35 @@ export default function GalleryPage() {
               </button>
             )}
           </div>
+
+          {/* Sort toggle */}
+          <div className="flex shrink-0 items-center gap-1 rounded-md border bg-muted/40 p-0.5">
+            <Button
+              size="sm"
+              variant="ghost"
+              className={cn(
+                "h-7 gap-1 px-2 text-[11px]",
+                sortOrder === "savedAt" && "bg-background shadow-sm"
+              )}
+              onClick={() => handleSortOrder("savedAt")}
+            >
+              <ClockIcon size={11} />
+              Recent
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className={cn(
+                "h-7 gap-1 px-2 text-[11px]",
+                sortOrder === "openCount" && "bg-background shadow-sm"
+              )}
+              onClick={() => handleSortOrder("openCount")}
+            >
+              <FlameIcon size={11} />
+              Most used
+            </Button>
+          </div>
+
           <span
             className={cn(
               "shrink-0 tabular-nums text-xs text-muted-foreground",
@@ -144,6 +233,11 @@ export default function GalleryPage() {
                 <Skeleton key={i} className="aspect-[4/3] rounded-card" />
               ))}
             </div>
+          )}
+
+          {/* Revisit strip — sites saved 7+ days ago, never opened */}
+          {!isLoading && cols > 0 && (
+            <RevisitStrip sites={resurfaceSites} onOpen={handleCardClick} />
           )}
 
           {/* Empty state */}
@@ -207,6 +301,7 @@ export default function GalleryPage() {
                           site={site}
                           onClick={handleCardClick}
                           onCategoryChange={handleCategoryChange}
+                          onPinToggle={handlePinToggle}
                         />
                       ))}
                     </div>

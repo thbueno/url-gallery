@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { TagIcon } from "lucide-react"
+import { PinIcon, TagIcon } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ interface SiteCardProps {
   site: SavedSite
   onClick: (site: SavedSite) => void
   onCategoryChange?: (site: SavedSite, category: Category) => void
+  onPinToggle?: (site: SavedSite, pinned: boolean) => void
   className?: string
 }
 
@@ -41,7 +42,13 @@ function getDomain(url: string): string {
   }
 }
 
-export function SiteCard({ site, onClick, onCategoryChange, className }: SiteCardProps) {
+export function SiteCard({
+  site,
+  onClick,
+  onCategoryChange,
+  onPinToggle,
+  className,
+}: SiteCardProps) {
   const thumbUrl = useBlobUrl(site.thumb)
   const domain = getDomain(site.url)
 
@@ -59,6 +66,32 @@ export function SiteCard({ site, onClick, onCategoryChange, className }: SiteCar
         className
       )}
     >
+      {/* Pin button — top-right, hover-visible; always visible when pinned */}
+      {onPinToggle && (
+        <span
+          onClick={(e) => {
+            e.stopPropagation()
+            onPinToggle(site, !site.pinned)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.stopPropagation()
+              onPinToggle(site, !site.pinned)
+            }
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-label={site.pinned ? "Unpin" : "Pin"}
+          className={cn(
+            "absolute right-1.5 top-1.5 z-10 flex size-6 items-center justify-center rounded-md",
+            "bg-black/40 text-white backdrop-blur-sm transition-opacity",
+            site.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+            "hover:bg-black/60 cursor-pointer"
+          )}
+        >
+          <PinIcon size={11} className={cn(site.pinned && "fill-white")} />
+        </span>
+      )}
+
       {/* Thumbnail or fallback */}
       {thumbUrl ? (
         <img src={thumbUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
