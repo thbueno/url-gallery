@@ -1,15 +1,17 @@
 import "@/style.css"
 
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { BookmarkIcon } from "lucide-react"
+import { BookmarkIcon, SearchIcon, XIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 import { CategoryFilter } from "@/components/gallery/CategoryFilter"
 import { SiteCard } from "@/components/gallery/SiteCard"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Category } from "@/lib/categorizer"
 import { savedSiteStore } from "@/lib/store"
 import type { SavedSite } from "@/lib/store"
+import { cn } from "@/lib/utils"
 import { useGalleryStore } from "@/store/galleryStore"
 
 // ── Column count from container width ────────────────────────────────────────
@@ -39,7 +41,9 @@ export default function GalleryPage() {
   const categories = useGalleryStore((s) => s.categories)
   const activeCategory = useGalleryStore((s) => s.activeCategory)
   const isLoading = useGalleryStore((s) => s.isLoading)
+  const searchQuery = useGalleryStore((s) => s.searchQuery)
   const load = useGalleryStore((s) => s.load)
+  const setSearchQuery = useGalleryStore((s) => s.setSearchQuery)
   const setActiveCategory = useGalleryStore((s) => s.setActiveCategory)
   const updateSiteCategory = useGalleryStore((s) => s.updateSiteCategory)
 
@@ -94,10 +98,36 @@ export default function GalleryPage() {
       {/* ── Main ── */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-3.5">
-          <h1 className="text-sm font-semibold">{activeCategory ?? "All sites"}</h1>
-          <span className="tabular-nums text-xs text-muted-foreground">
-            {isLoading ? "…" : `${sites.length} site${sites.length !== 1 ? "s" : ""}`}
+        <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-2.5">
+          <div className="relative flex-1">
+            <SearchIcon
+              size={13}
+              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search saved sites…"
+              className="h-8 pl-7 pr-7 text-xs"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <XIcon size={13} />
+              </button>
+            )}
+          </div>
+          <span
+            className={cn(
+              "shrink-0 tabular-nums text-xs text-muted-foreground",
+              isLoading && "opacity-0"
+            )}
+          >
+            {sites.length} site{sites.length !== 1 ? "s" : ""}
           </span>
         </div>
 
@@ -119,13 +149,31 @@ export default function GalleryPage() {
           {/* Empty state */}
           {!isLoading && cols > 0 && sites.length === 0 && (
             <div className="flex h-48 flex-col items-center justify-center gap-2 text-center">
-              <BookmarkIcon size={28} className="text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">
-                {activeCategory ? `No ${activeCategory} sites saved` : "No saved sites yet"}
-              </p>
-              <p className="text-xs text-muted-foreground/60">
-                Click the bookmark button on any page to save it
-              </p>
+              {searchQuery ? (
+                <>
+                  <SearchIcon size={28} className="text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">
+                    No results for &ldquo;{searchQuery}&rdquo;
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="text-xs text-muted-foreground/60 underline-offset-2 hover:underline"
+                  >
+                    Clear search
+                  </button>
+                </>
+              ) : (
+                <>
+                  <BookmarkIcon size={28} className="text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">
+                    {activeCategory ? `No ${activeCategory} sites saved` : "No saved sites yet"}
+                  </p>
+                  <p className="text-xs text-muted-foreground/60">
+                    Click the bookmark button on any page to save it
+                  </p>
+                </>
+              )}
             </div>
           )}
 
