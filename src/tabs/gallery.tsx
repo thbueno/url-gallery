@@ -1,7 +1,16 @@
 import "@/style.css"
 
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { BookmarkIcon, ClockIcon, FlameIcon, ImageIcon, SearchIcon, XIcon } from "lucide-react"
+import {
+  BookmarkIcon,
+  ClockIcon,
+  FlameIcon,
+  ImageIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
+  SearchIcon,
+  XIcon,
+} from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 import { CategoryFilter } from "@/components/gallery/CategoryFilter"
@@ -180,9 +189,27 @@ export default function GalleryPage() {
   const setSortOrder = useGalleryStore((s) => s.setSortOrder)
   const updateSiteCategory = useGalleryStore((s) => s.updateSiteCategory)
   const togglePin = useGalleryStore((s) => s.togglePin)
+  const deleteSite = useGalleryStore((s) => s.deleteSite)
 
   const [showPermissionBanner, setShowPermissionBanner] = useState(false)
   const [isSeeding, setIsSeeding] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("sidebar-collapsed") === "true"
+    } catch {
+      return false
+    }
+  })
+
+  function toggleSidebar() {
+    setSidebarCollapsed((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem("sidebar-collapsed", String(next))
+      } catch {}
+      return next
+    })
+  }
 
   useEffect(() => {
     chrome.storage.local.get("permissionDeclined", (result) => {
@@ -225,6 +252,12 @@ export default function GalleryPage() {
     }
   }
 
+  async function handleDelete(site: SavedSite) {
+    if (site.id !== undefined) {
+      await deleteSite(site.id)
+    }
+  }
+
   function handleSortOrder(order: SortOrder) {
     setSortOrder(order)
   }
@@ -234,18 +267,38 @@ export default function GalleryPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
       {/* ── Sidebar ── */}
-      <aside className="flex w-60 shrink-0 flex-col overflow-y-auto border-r border-sidebar-border bg-sidebar">
-        <div className="flex items-center gap-2 px-4 py-5">
-          <BookmarkIcon size={15} className="text-foreground/50" />
-          <span className="text-sm font-semibold tracking-tight">URL Gallery</span>
+      <aside
+        className={cn(
+          "flex shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar",
+          "transition-[width] duration-200",
+          sidebarCollapsed ? "w-10" : "w-60"
+        )}
+      >
+        <div className="flex shrink-0 items-center gap-2 px-2 py-5">
+          {!sidebarCollapsed && (
+            <>
+              <BookmarkIcon size={15} className="ml-2 text-foreground/50" />
+              <span className="flex-1 text-sm font-semibold tracking-tight">URL Gallery</span>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            {sidebarCollapsed ? <PanelLeftOpenIcon size={15} /> : <PanelLeftCloseIcon size={15} />}
+          </button>
         </div>
 
-        <CategoryFilter
-          categories={categories}
-          activeCategory={activeCategory}
-          totalCount={totalCount}
-          onSelect={setActiveCategory}
-        />
+        {!sidebarCollapsed && (
+          <CategoryFilter
+            categories={categories}
+            activeCategory={activeCategory}
+            totalCount={totalCount}
+            onSelect={setActiveCategory}
+          />
+        )}
       </aside>
 
       {/* ── Main ── */}
@@ -416,6 +469,7 @@ export default function GalleryPage() {
                           onClick={handleCardClick}
                           onCategoryChange={handleCategoryChange}
                           onPinToggle={handlePinToggle}
+                          onDelete={handleDelete}
                         />
                       ))}
                     </div>

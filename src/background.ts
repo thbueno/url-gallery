@@ -51,7 +51,3 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   handleMessage(message).then(sendResponse)
   return true // keep channel open for async response
 })
-
-chrome.action.onClicked.addListener(() => {
-  chrome.tabs.create({ url: chrome.runtime.getURL("tabs/gallery.html") })
-})

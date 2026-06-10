@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { PinIcon, TagIcon } from "lucide-react"
+import { PinIcon, TagIcon, Trash2Icon } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -20,6 +20,7 @@ interface SiteCardProps {
   onClick: (site: SavedSite) => void
   onCategoryChange?: (site: SavedSite, category: Category) => void
   onPinToggle?: (site: SavedSite, pinned: boolean) => void
+  onDelete?: (site: SavedSite) => void
   className?: string
 }
 
@@ -47,6 +48,7 @@ export function SiteCard({
   onClick,
   onCategoryChange,
   onPinToggle,
+  onDelete,
   className,
 }: SiteCardProps) {
   const thumbUrl = useBlobUrl(site.thumb)
@@ -92,6 +94,32 @@ export function SiteCard({
         </span>
       )}
 
+      {/* Delete button — top-left, hover-visible */}
+      {onDelete && (
+        <span
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(site)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.stopPropagation()
+              onDelete(site)
+            }
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-label="Delete"
+          className={cn(
+            "absolute left-1.5 top-1.5 z-10 flex size-6 items-center justify-center rounded-md",
+            "bg-black/40 text-white backdrop-blur-sm transition-opacity",
+            "opacity-0 group-hover:opacity-100",
+            "hover:bg-red-600/80 cursor-pointer"
+          )}
+        >
+          <Trash2Icon size={11} />
+        </span>
+      )}
+
       {/* Thumbnail or fallback */}
       {thumbUrl ? (
         <img src={thumbUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -134,7 +162,14 @@ export function SiteCard({
                   {site.category}
                 </span>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuContent
+                align="end"
+                className="w-36"
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerUp={(e) => e.stopPropagation()}
+                onPointerDownCapture={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <DropdownMenuLabel className="text-[10px]">Change category</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {ALL_CATEGORIES.map((cat) => (

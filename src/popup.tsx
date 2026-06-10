@@ -47,20 +47,51 @@ export default function Popup() {
     setSaveError(null)
 
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    if (!tab?.url || !tab.url.startsWith("http")) {
+    if (!tab?.url || !tab.url.startsWith("http") || tab.id === undefined) {
       setSaveState("error")
       setSaveError("Can't save this page")
       return
+    }
+
+    let imageUrl: string | undefined
+    let faviconUrl: string | undefined = tab.favIconUrl ?? undefined
+    let title: string = tab.title ?? tab.url
+    let declaredType: string | undefined
+
+    try {
+      const [result] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          const getMeta = (attr: string, value: string) =>
+            (document.querySelector(`meta[${attr}="${value}"]`) as HTMLMetaElement | null)?.content
+          return {
+            imageUrl: getMeta("property", "og:image"),
+            faviconUrl: (document.querySelector('link[rel~="icon"]') as HTMLLinkElement | null)
+              ?.href,
+            title:
+              getMeta("property", "og:title") ?? getMeta("name", "twitter:title") ?? document.title,
+            declaredType: getMeta("property", "og:type"),
+          }
+        },
+      })
+      if (result?.result) {
+        imageUrl = result.result.imageUrl ?? undefined
+        faviconUrl = result.result.faviconUrl ?? faviconUrl
+        title = result.result.title ?? title
+        declaredType = result.result.declaredType ?? undefined
+      }
+    } catch {
+      // executeScript fails on chrome:// pages and restricted origins — fall through
     }
 
     try {
       const response = await chrome.runtime.sendMessage({
         type: "SAVE_REQUEST",
         url: tab.url,
-        title: tab.title ?? tab.url,
-        imageUrl: undefined,
-        faviconUrl: tab.favIconUrl ?? undefined,
-        declaredType: undefined,
+        title,
+        imageUrl,
+        faviconUrl,
+        declaredType,
       })
       if (response?.ok) {
         setSaveState(permGranted ? "saved-full" : "saved-favicon")

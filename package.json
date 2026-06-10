@@ -59,7 +59,9 @@
     "action": {},
     "permissions": [
       "storage",
-      "tabs"
+      "tabs",
+      "scripting",
+      "activeTab"
     ],
     "optional_host_permissions": [
       "https://*/*"

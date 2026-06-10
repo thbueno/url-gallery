@@ -23,6 +23,7 @@ interface GalleryStore {
   setSortOrder: (order: SortOrder) => Promise<void>
   updateSiteCategory: (id: number, category: string) => Promise<void>
   togglePin: (id: number, pinned: boolean) => Promise<void>
+  deleteSite: (id: number) => Promise<void>
 }
 
 const RESURFACE_DAYS = 7
@@ -124,5 +125,15 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
       queryResurface(),
     ])
     set({ sites, resurfaceSites })
+  },
+
+  async deleteSite(id) {
+    await savedSiteStore.delete(id)
+    const [sites, categories, resurfaceSites] = await Promise.all([
+      querySites(get().searchQuery, get().activeCategory, get().sortOrder),
+      queryCategories(),
+      queryResurface(),
+    ])
+    set({ sites, categories, resurfaceSites })
   },
 }))

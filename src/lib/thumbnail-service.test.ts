@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const mockWebPBlob = new Blob([], { type: "image/webp" })
 
-const mockBitmap = { width: 400, height: 300, close: vi.fn() }
+const mockBitmap = { width: 800, height: 600, close: vi.fn() }
 
 const mockCtx = {
   drawImage: vi.fn(),
@@ -67,23 +67,44 @@ describe("fetchAndResize", () => {
     expect(result.type).toBe("image/webp")
   })
 
-  it("calls convertToBlob with { type: 'image/webp', quality: 0.6 }", async () => {
+  it("calls convertToBlob with { type: 'image/webp', quality: 0.82 }", async () => {
     vi.stubGlobal("fetch", makeFetchMock())
 
     await fetchAndResize(imageUrl, faviconUrl)
 
     expect(mockCanvas.convertToBlob).toHaveBeenCalledWith({
       type: "image/webp",
-      quality: 0.6,
+      quality: 0.82,
     })
   })
 
-  it("draws image at 400×300", async () => {
+  it("draws image at 800×600 with cover-fit (exact-fit image has no offset)", async () => {
     vi.stubGlobal("fetch", makeFetchMock())
 
     await fetchAndResize(imageUrl, faviconUrl)
 
-    expect(mockCtx.drawImage).toHaveBeenCalledWith(mockBitmap, 0, 0, 400, 300)
+    // mockBitmap is 800×600 — scale=1, offsets=(0,0)
+    expect(mockCtx.drawImage).toHaveBeenCalledWith(mockBitmap, 0, 0, 800, 600)
+  })
+
+  it("cover-fits a wide image (1200×630) — centers and crops, no distortion", async () => {
+    const wideBitmap = { width: 1200, height: 630, close: vi.fn() }
+    ;(global.createImageBitmap as ReturnType<typeof vi.fn>).mockResolvedValue(wideBitmap)
+    vi.stubGlobal("fetch", makeFetchMock())
+
+    await fetchAndResize(imageUrl, faviconUrl)
+
+    const scaleX = 800 / 1200
+    const scaleY = 600 / 630
+    const scale = Math.min(scaleX, scaleY)
+    const drawW = 1200 * scale
+    const drawH = 630 * scale
+    const offsetX = (800 - drawW) / 2
+    const offsetY = (600 - drawH) / 2
+
+    expect(mockCtx.drawImage).toHaveBeenCalledWith(wideBitmap, offsetX, offsetY, drawW, drawH)
+    // output canvas is 800×600
+    expect(global.OffscreenCanvas).toHaveBeenCalledWith(800, 600)
   })
 
   it("falls back to faviconUrl when first fetch rejects", async () => {
