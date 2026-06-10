@@ -2,39 +2,42 @@ import { InfoIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-export interface CategoryCount {
+export interface TagCount {
   name: string
   count: number
 }
 
 interface CategoryFilterProps {
-  categories: CategoryCount[]
-  activeCategory: string | null
+  tags: TagCount[]
+  activeTags: string[]
   totalCount: number
-  onSelect: (category: string | null) => void
+  onSelect: (tags: string[]) => void
 }
 
-export function CategoryFilter({
-  categories,
-  activeCategory,
-  totalCount,
-  onSelect,
-}: CategoryFilterProps) {
-  const uncategorizedCount = categories.find((c) => c.name === "Uncategorized")?.count ?? 0
+export function CategoryFilter({ tags, activeTags, totalCount, onSelect }: CategoryFilterProps) {
+  const uncategorizedCount = tags.find((c) => c.name === "Uncategorized")?.count ?? 0
   const showUncategorizedNotice = uncategorizedCount > 0 && totalCount > 0
+
+  function toggleTag(name: string) {
+    if (activeTags.includes(name)) {
+      onSelect(activeTags.filter((t) => t !== name))
+    } else {
+      onSelect([...activeTags, name])
+    }
+  }
 
   return (
     <nav className="flex flex-col gap-0.5 px-2 pb-4">
       <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-        Categories
+        Tags
       </p>
 
       <button
         type="button"
-        onClick={() => onSelect(null)}
+        onClick={() => onSelect([])}
         className={cn(
           "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
-          activeCategory === null
+          activeTags.length === 0
             ? "bg-accent font-medium text-accent-foreground"
             : "text-sidebar-foreground hover:bg-accent/60"
         )}
@@ -43,21 +46,21 @@ export function CategoryFilter({
         <span className="tabular-nums text-xs text-muted-foreground">{totalCount}</span>
       </button>
 
-      {categories.map((cat) => (
+      {tags.map((tag) => (
         <button
-          key={cat.name}
+          key={tag.name}
           type="button"
-          onClick={() => onSelect(cat.name === activeCategory ? null : cat.name)}
+          onClick={() => toggleTag(tag.name)}
           className={cn(
             "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
-            activeCategory === cat.name
+            activeTags.includes(tag.name)
               ? "bg-accent font-medium text-accent-foreground"
               : "text-sidebar-foreground hover:bg-accent/60"
           )}
         >
-          <span className="truncate">{cat.name}</span>
+          <span className="truncate">{tag.name}</span>
           <span className="ml-2 shrink-0 tabular-nums text-xs text-muted-foreground">
-            {cat.count}
+            {tag.count}
           </span>
         </button>
       ))}
@@ -67,8 +70,8 @@ export function CategoryFilter({
           <InfoIcon size={11} className="mt-0.5 shrink-0 text-muted-foreground/70" />
           <p className="text-[10px] leading-snug text-muted-foreground">
             {uncategorizedCount === totalCount
-              ? "All sites are uncategorized — categories are auto-detected from OG tags and domain."
-              : `${uncategorizedCount} site${uncategorizedCount !== 1 ? "s" : ""} couldn't be auto-categorized.`}
+              ? "All sites are uncategorized — tags are auto-detected from OG tags and domain."
+              : `${uncategorizedCount} site${uncategorizedCount !== 1 ? "s" : ""} couldn't be auto-tagged.`}
           </p>
         </div>
       )}

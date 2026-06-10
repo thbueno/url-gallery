@@ -1,15 +1,4 @@
-export type Category =
-  | "Video"
-  | "Music"
-  | "News"
-  | "Social"
-  | "Shopping"
-  | "Dev Tools"
-  | "Docs"
-  | "Design"
-  | "Uncategorized"
-
-export const ALL_CATEGORIES: Category[] = [
+export const ALL_TAGS: string[] = [
   "Video",
   "Music",
   "News",
@@ -21,108 +10,95 @@ export const ALL_CATEGORIES: Category[] = [
   "Uncategorized",
 ]
 
-export function categorize(
+function categorizeSingle(
   type: string | undefined,
   _siteName: string | undefined,
   domain: string
-): Category {
-  // Priority 1: Check OG type for "video." and "music." prefixes
+): string {
   if (type !== undefined) {
-    if (type.startsWith("video.")) {
-      return "Video"
-    }
-    if (type.startsWith("music.")) {
-      return "Music"
-    }
+    if (type.startsWith("video.")) return "Video"
+    if (type.startsWith("music.")) return "Music"
   }
 
-  // Priority 2: For generic types or undefined, apply domain heuristics
-  const domainLower = domain.toLowerCase()
+  const d = domain.toLowerCase()
 
-  // Video domains
   if (
-    domainLower.includes("youtube") ||
-    domainLower.includes("vimeo") ||
-    domainLower.includes("twitch") ||
-    domainLower.includes("dailymotion")
-  ) {
+    d.includes("youtube") ||
+    d.includes("vimeo") ||
+    d.includes("twitch") ||
+    d.includes("dailymotion")
+  )
     return "Video"
-  }
 
-  // Social domains
   if (
-    domainLower.includes("twitter") ||
-    domainLower.includes("x.com") ||
-    domainLower.includes("instagram") ||
-    domainLower.includes("facebook") ||
-    domainLower.includes("linkedin") ||
-    domainLower.includes("reddit") ||
-    domainLower.includes("tiktok") ||
-    domainLower.includes("threads")
-  ) {
+    d.includes("twitter") ||
+    d.includes("x.com") ||
+    d.includes("instagram") ||
+    d.includes("facebook") ||
+    d.includes("linkedin") ||
+    d.includes("reddit") ||
+    d.includes("tiktok") ||
+    d.includes("threads")
+  )
     return "Social"
-  }
 
-  // Dev Tools domains
   if (
-    domainLower.includes("github") ||
-    domainLower.includes("gitlab") ||
-    domainLower.includes("stackoverflow") ||
-    domainLower.includes("npm") ||
-    domainLower.includes("crates.io") ||
-    domainLower.includes("pypi") ||
-    domainLower.includes("docker")
-  ) {
+    d.includes("github") ||
+    d.includes("gitlab") ||
+    d.includes("stackoverflow") ||
+    d.includes("npm") ||
+    d.includes("crates.io") ||
+    d.includes("pypi") ||
+    d.includes("docker")
+  )
     return "Dev Tools"
-  }
 
-  // Docs domains
   if (
-    domainLower.includes("docs.") ||
-    domainLower.includes("developer.") ||
-    domainLower.includes("devdocs") ||
-    domainLower.includes("mdn") ||
-    domainLower.includes("readthedocs")
-  ) {
+    d.includes("docs.") ||
+    d.includes("developer.") ||
+    d.includes("devdocs") ||
+    d.includes("mdn") ||
+    d.includes("readthedocs")
+  )
     return "Docs"
-  }
 
-  // Design domains
   if (
-    domainLower.includes("figma") ||
-    domainLower.includes("dribbble") ||
-    domainLower.includes("behance") ||
-    domainLower.includes("canva") ||
-    domainLower.includes("sketch")
-  ) {
+    d.includes("figma") ||
+    d.includes("dribbble") ||
+    d.includes("behance") ||
+    d.includes("canva") ||
+    d.includes("sketch")
+  )
     return "Design"
-  }
 
-  // Shopping domains
   if (
-    domainLower.includes("amazon") ||
-    domainLower.includes("ebay") ||
-    domainLower.includes("shopify") ||
-    domainLower.includes("etsy") ||
-    domainLower.includes("aliexpress")
-  ) {
+    d.includes("amazon") ||
+    d.includes("ebay") ||
+    d.includes("shopify") ||
+    d.includes("etsy") ||
+    d.includes("aliexpress")
+  )
     return "Shopping"
-  }
 
-  // News domains
   if (
-    domainLower.includes("bbc") ||
-    domainLower.includes("cnn") ||
-    domainLower.includes("reuters") ||
-    domainLower.includes("nytimes") ||
-    domainLower.includes("theguardian") ||
-    domainLower.includes("techcrunch") ||
-    domainLower.includes("hackernews") ||
-    domainLower.includes("hn.")
-  ) {
+    d.includes("bbc") ||
+    d.includes("cnn") ||
+    d.includes("reuters") ||
+    d.includes("nytimes") ||
+    d.includes("theguardian") ||
+    d.includes("techcrunch") ||
+    d.includes("hackernews") ||
+    d.includes("hn.")
+  )
     return "News"
-  }
 
-  // Default fallback
   return "Uncategorized"
+}
+
+export function categorize(
+  type: string | undefined,
+  siteName: string | undefined,
+  domain: string
+): string[] {
+  return [categorizeSingle(type, siteName, domain)]
 }

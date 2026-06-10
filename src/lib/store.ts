@@ -6,7 +6,7 @@ export interface SavedSite {
   title: string
   favicon: string | null
   thumb: Blob | null
-  category: string
+  tags: string[]
   savedAt: number
   openCount: number
   pinned: boolean
@@ -20,6 +20,22 @@ class SavedSiteDatabase extends Dexie {
     this.version(1).stores({
       savedSites: "++id, url, category, pinned, openCount, savedAt",
     })
+    this.version(2)
+      .stores({
+        savedSites: "++id, url, *tags, pinned, openCount, savedAt",
+      })
+      .upgrade((tx) =>
+        tx
+          .table("savedSites")
+          .toCollection()
+          .modify((site) => {
+            // biome-ignore lint/suspicious/noExplicitAny: legacy v1 record has category field
+            site.tags = [(site as any).category ?? "Uncategorized"]
+            // biome-ignore lint/suspicious/noExplicitAny: remove migrated field
+            // biome-ignore lint/performance/noDelete: must remove legacy field from IndexedDB record
+            delete (site as any).category
+          })
+      )
   }
 }
 
@@ -64,7 +80,7 @@ class SavedSiteStore {
         (site) =>
           site.title.toLowerCase().includes(lower) ||
           site.url.toLowerCase().includes(lower) ||
-          site.category.toLowerCase().includes(lower)
+          site.tags.some((t) => t.toLowerCase().includes(lower))
       )
       .toArray()
   }

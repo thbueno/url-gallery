@@ -18,8 +18,7 @@ import { SiteCard } from "@/components/gallery/SiteCard"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import type { Category } from "@/lib/categorizer"
-import { ALL_CATEGORIES } from "@/lib/categorizer"
+import { ALL_TAGS } from "@/lib/categorizer"
 import { savedSiteStore } from "@/lib/store"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
@@ -155,13 +154,13 @@ async function seedDatabase(): Promise<void> {
   const DAY = 24 * 60 * 60 * 1000
   for (let i = 0; i < 1000; i++) {
     const domain = SEED_DOMAINS[i % SEED_DOMAINS.length] ?? "example.com"
-    const category = ALL_CATEGORIES[i % ALL_CATEGORIES.length] ?? "Uncategorized"
+    const tag = ALL_TAGS[i % ALL_TAGS.length] ?? "Uncategorized"
     await savedSiteStore.add({
       url: `https://${domain}/item-${i}`,
       title: `Seeded Site #${i + 1} — ${domain}`,
       favicon: null,
       thumb: null,
-      category,
+      tags: [tag],
     })
   }
   // Backdate the last 20 records to 8 days ago — exercises the resurface strip
@@ -177,17 +176,17 @@ async function seedDatabase(): Promise<void> {
 
 export default function GalleryPage() {
   const sites = useGalleryStore((s) => s.sites)
-  const categories = useGalleryStore((s) => s.categories)
+  const tags = useGalleryStore((s) => s.tags)
   const resurfaceSites = useGalleryStore((s) => s.resurfaceSites)
-  const activeCategory = useGalleryStore((s) => s.activeCategory)
+  const activeTags = useGalleryStore((s) => s.activeTags)
   const sortOrder = useGalleryStore((s) => s.sortOrder)
   const isLoading = useGalleryStore((s) => s.isLoading)
   const searchQuery = useGalleryStore((s) => s.searchQuery)
   const load = useGalleryStore((s) => s.load)
   const setSearchQuery = useGalleryStore((s) => s.setSearchQuery)
-  const setActiveCategory = useGalleryStore((s) => s.setActiveCategory)
+  const setActiveTags = useGalleryStore((s) => s.setActiveTags)
   const setSortOrder = useGalleryStore((s) => s.setSortOrder)
-  const updateSiteCategory = useGalleryStore((s) => s.updateSiteCategory)
+  const updateSiteTags = useGalleryStore((s) => s.updateSiteTags)
   const togglePin = useGalleryStore((s) => s.togglePin)
   const deleteSite = useGalleryStore((s) => s.deleteSite)
 
@@ -240,9 +239,9 @@ export default function GalleryPage() {
     window.open(site.url, "_blank")
   }
 
-  async function handleCategoryChange(site: SavedSite, category: Category) {
+  async function handleTagsChange(site: SavedSite, siteTags: string[]) {
     if (site.id !== undefined) {
-      await updateSiteCategory(site.id, category)
+      await updateSiteTags(site.id, siteTags)
     }
   }
 
@@ -262,7 +261,7 @@ export default function GalleryPage() {
     setSortOrder(order)
   }
 
-  const totalCount = categories.reduce((n, c) => n + c.count, 0)
+  const totalCount = tags.reduce((n, c) => n + c.count, 0)
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
@@ -293,10 +292,10 @@ export default function GalleryPage() {
 
         {!sidebarCollapsed && (
           <CategoryFilter
-            categories={categories}
-            activeCategory={activeCategory}
+            tags={tags}
+            activeTags={activeTags}
             totalCount={totalCount}
-            onSelect={setActiveCategory}
+            onSelect={setActiveTags}
           />
         )}
       </aside>
@@ -428,7 +427,9 @@ export default function GalleryPage() {
                 <>
                   <BookmarkIcon size={28} className="text-muted-foreground/30" />
                   <p className="text-sm text-muted-foreground">
-                    {activeCategory ? `No ${activeCategory} sites saved` : "No saved sites yet"}
+                    {activeTags.length > 0
+                      ? `No sites tagged ${activeTags.join(" or ")}`
+                      : "No saved sites yet"}
                   </p>
                   <p className="text-xs text-muted-foreground/60">
                     Click the bookmark button on any page to save it
@@ -467,7 +468,7 @@ export default function GalleryPage() {
                           key={site.id ?? site.url}
                           site={site}
                           onClick={handleCardClick}
-                          onCategoryChange={handleCategoryChange}
+                          onTagsChange={handleTagsChange}
                           onPinToggle={handlePinToggle}
                           onDelete={handleDelete}
                         />

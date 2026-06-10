@@ -2,13 +2,10 @@
 import "fake-indexeddb/auto"
 import { beforeEach, describe, expect, it } from "vitest"
 
-// We'll import these after the implementation exists.
-// For now, the tests are written to define the contract.
 import { savedSiteStore } from "@/lib/store"
 
 describe("SavedSiteStore", () => {
   beforeEach(async () => {
-    // Clear all saved sites before each test
     const all = await savedSiteStore.getAll()
     for (const site of all) {
       if (site.id !== undefined) {
@@ -26,13 +23,13 @@ describe("SavedSiteStore", () => {
       title: "Example",
       favicon: "https://example.com/favicon.ico",
       thumb: null,
-      category: "dev",
+      tags: ["Dev Tools"],
     })
 
     expect(site.id).toBeTypeOf("number")
     expect(site.url).toBe("https://example.com")
     expect(site.title).toBe("Example")
-    expect(site.category).toBe("dev")
+    expect(site.tags).toEqual(["Dev Tools"])
     expect(site.openCount).toBe(0)
     expect(site.pinned).toBe(false)
     expect(site.savedAt).toBeTypeOf("number")
@@ -44,14 +41,14 @@ describe("SavedSiteStore", () => {
       title: "A",
       favicon: null,
       thumb: null,
-      category: "news",
+      tags: ["News"],
     })
     await savedSiteStore.add({
       url: "https://b.com",
       title: "B",
       favicon: null,
       thumb: null,
-      category: "news",
+      tags: ["News"],
     })
 
     const all = await savedSiteStore.getAll()
@@ -64,7 +61,7 @@ describe("SavedSiteStore", () => {
       title: "C",
       favicon: null,
       thumb: null,
-      category: "social",
+      tags: ["Social"],
     })
 
     const id = site.id
@@ -85,7 +82,7 @@ describe("SavedSiteStore", () => {
       title: "D",
       favicon: null,
       thumb: null,
-      category: "dev",
+      tags: ["Dev Tools"],
     })
 
     const id = site.id as number
@@ -101,7 +98,7 @@ describe("SavedSiteStore", () => {
       title: "E",
       favicon: null,
       thumb: null,
-      category: "entertainment",
+      tags: ["Video"],
     })
 
     const id = site.id as number
@@ -119,14 +116,14 @@ describe("SavedSiteStore", () => {
       title: "GitHub",
       favicon: null,
       thumb: null,
-      category: "dev",
+      tags: ["Dev Tools"],
     })
     await savedSiteStore.add({
       url: "https://twitter.com",
       title: "Twitter",
       favicon: null,
       thumb: null,
-      category: "social",
+      tags: ["Social"],
     })
 
     const results = await savedSiteStore.search("github")
@@ -142,7 +139,7 @@ describe("SavedSiteStore", () => {
       title: "Hacker News",
       favicon: null,
       thumb: null,
-      category: "news",
+      tags: ["News"],
     })
 
     const results = await savedSiteStore.search("ycombinator")
@@ -150,23 +147,23 @@ describe("SavedSiteStore", () => {
     expect(results[0]?.url).toContain("ycombinator")
   })
 
-  it("search() returns sites matching the category", async () => {
+  it("search() returns sites matching a tag", async () => {
     await savedSiteStore.add({
       url: "https://reddit.com",
       title: "Reddit",
       favicon: null,
       thumb: null,
-      category: "social",
+      tags: ["Social"],
     })
     await savedSiteStore.add({
       url: "https://stackoverflow.com",
       title: "Stack Overflow",
       favicon: null,
       thumb: null,
-      category: "dev",
+      tags: ["Dev Tools"],
     })
 
-    const results = await savedSiteStore.search("dev")
+    const results = await savedSiteStore.search("Dev Tools")
     expect(results.length).toBe(1)
     expect(results[0]?.title).toBe("Stack Overflow")
   })
@@ -177,11 +174,30 @@ describe("SavedSiteStore", () => {
       title: "NonMatching",
       favicon: null,
       thumb: null,
-      category: "other",
+      tags: ["Other"],
     })
 
     const results = await savedSiteStore.search("xyz_no_match_xyz")
     expect(results.length).toBe(0)
+  })
+
+  // -------------------------------------------------------------------------
+  // OR filter via tags
+  // -------------------------------------------------------------------------
+  it("a site with tags ['Video', 'Dev Tools'] matches search for either tag", async () => {
+    await savedSiteStore.add({
+      url: "https://multi.com",
+      title: "Multi Tag",
+      favicon: null,
+      thumb: null,
+      tags: ["Video", "Dev Tools"],
+    })
+
+    const byVideo = await savedSiteStore.search("Video")
+    expect(byVideo.some((s) => s.url === "https://multi.com")).toBe(true)
+
+    const byDev = await savedSiteStore.search("Dev Tools")
+    expect(byDev.some((s) => s.url === "https://multi.com")).toBe(true)
   })
 
   // -------------------------------------------------------------------------
@@ -193,7 +209,7 @@ describe("SavedSiteStore", () => {
       title: "Opened",
       favicon: null,
       thumb: null,
-      category: "dev",
+      tags: ["Dev Tools"],
     })
 
     const id = site.id as number
@@ -212,7 +228,7 @@ describe("SavedSiteStore", () => {
       title: "Pinned",
       favicon: null,
       thumb: null,
-      category: "dev",
+      tags: ["Dev Tools"],
     })
 
     const id = site.id as number
@@ -237,7 +253,7 @@ describe("SavedSiteStore", () => {
       title: "Thumbed",
       favicon: null,
       thumb: blob,
-      category: "dev",
+      tags: ["Dev Tools"],
     })
 
     const id = site.id as number

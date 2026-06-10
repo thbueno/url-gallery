@@ -28,14 +28,14 @@ async function handleMessage(raw: unknown): Promise<{ ok: boolean; error?: strin
         }
       }
 
-      const category = categorize(msg.declaredType, siteName, domain)
+      const tags = categorize(msg.declaredType, siteName, domain)
 
       await savedSiteStore.add({
         url: msg.url,
         title: msg.title,
         favicon: msg.faviconUrl ?? null,
         thumb: thumbBlob,
-        category,
+        tags,
       })
 
       return { ok: true }

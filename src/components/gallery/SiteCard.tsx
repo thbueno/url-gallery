@@ -10,15 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Category } from "@/lib/categorizer"
-import { ALL_CATEGORIES } from "@/lib/categorizer"
+import { ALL_TAGS } from "@/lib/categorizer"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
 
 interface SiteCardProps {
   site: SavedSite
   onClick: (site: SavedSite) => void
-  onCategoryChange?: (site: SavedSite, category: Category) => void
+  onTagsChange?: (site: SavedSite, tags: string[]) => void
   onPinToggle?: (site: SavedSite, pinned: boolean) => void
   onDelete?: (site: SavedSite) => void
   className?: string
@@ -46,7 +45,7 @@ function getDomain(url: string): string {
 export function SiteCard({
   site,
   onClick,
-  onCategoryChange,
+  onTagsChange,
   onPinToggle,
   onDelete,
   className,
@@ -144,7 +143,7 @@ export function SiteCard({
         <div className="mt-1 flex items-center justify-between gap-1.5">
           <span className="min-w-0 truncate text-[10px] text-white/60">{domain}</span>
 
-          {onCategoryChange ? (
+          {onTagsChange ? (
             <DropdownMenu>
               <DropdownMenuTrigger
                 asChild
@@ -159,7 +158,7 @@ export function SiteCard({
                   )}
                 >
                   <TagIcon size={9} />
-                  {site.category}
+                  {site.tags[0] ?? "Uncategorized"}
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -170,28 +169,28 @@ export function SiteCard({
                 onPointerDownCapture={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
               >
-                <DropdownMenuLabel className="text-[10px]">Change category</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-[10px]">Change tag</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {ALL_CATEGORIES.map((cat) => (
+                {ALL_TAGS.map((tag) => (
                   <DropdownMenuItem
-                    key={cat}
+                    key={tag}
                     className={cn(
                       "text-xs",
-                      cat === site.category && "font-medium text-accent-foreground"
+                      site.tags.includes(tag) && "font-medium text-accent-foreground"
                     )}
                     onSelect={(e) => {
                       e.stopPropagation()
-                      onCategoryChange(site, cat)
+                      onTagsChange(site, [tag])
                     }}
                   >
-                    {cat}
+                    {tag}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[10px] leading-none text-white/80">
-              {site.category}
+              {site.tags[0] ?? "Uncategorized"}
             </span>
           )}
         </div>
