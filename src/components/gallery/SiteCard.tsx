@@ -4,8 +4,8 @@ import { PinIcon, TagIcon, Trash2Icon } from "lucide-react"
 
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -158,7 +158,9 @@ export function SiteCard({
                   )}
                 >
                   <TagIcon size={9} />
-                  {site.tags[0] ?? "Uncategorized"}
+                  {site.tags.length > 1
+                    ? `${site.tags[0]} +${site.tags.length - 1}`
+                    : (site.tags[0] ?? "Uncategorized")}
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -169,23 +171,32 @@ export function SiteCard({
                 onPointerDownCapture={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
               >
-                <DropdownMenuLabel className="text-[10px]">Change tag</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-[10px]">Tags</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {ALL_TAGS.map((tag) => (
-                  <DropdownMenuItem
-                    key={tag}
-                    className={cn(
-                      "text-xs",
-                      site.tags.includes(tag) && "font-medium text-accent-foreground"
-                    )}
-                    onSelect={(e) => {
-                      e.stopPropagation()
-                      onTagsChange(site, [tag])
-                    }}
-                  >
-                    {tag}
-                  </DropdownMenuItem>
-                ))}
+                {ALL_TAGS.filter((t) => t !== "Uncategorized").map((tag) => {
+                  const checked = site.tags.includes(tag)
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={tag}
+                      className="text-xs"
+                      checked={checked}
+                      onCheckedChange={(next) => {
+                        let newTags: string[]
+                        if (next) {
+                          newTags = [...site.tags.filter((t) => t !== "Uncategorized"), tag]
+                        } else {
+                          newTags = site.tags.filter((t) => t !== tag)
+                          if (newTags.length === 0) newTags = ["Uncategorized"]
+                        }
+                        onTagsChange(site, newTags)
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onPointerUp={(e) => e.stopPropagation()}
+                    >
+                      {tag}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (

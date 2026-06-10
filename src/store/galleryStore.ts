@@ -24,6 +24,8 @@ interface GalleryStore {
   updateSiteTags: (id: number, tags: string[]) => Promise<void>
   togglePin: (id: number, pinned: boolean) => Promise<void>
   deleteSite: (id: number) => Promise<void>
+  renameTag: (oldName: string, newName: string) => Promise<void>
+  deleteTag: (name: string) => Promise<void>
 }
 
 const RESURFACE_DAYS = 7
@@ -139,5 +141,26 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
       queryResurface(),
     ])
     set({ sites, tags, resurfaceSites })
+  },
+
+  async renameTag(oldName, newName) {
+    await savedSiteStore.renameTag(oldName, newName)
+    const activeTags = get().activeTags.map((t) => (t === oldName ? newName : t))
+    const [sites, tags] = await Promise.all([
+      querySites(get().searchQuery, activeTags, get().sortOrder),
+      queryTags(),
+    ])
+    set({ sites, tags, activeTags })
+  },
+
+  async deleteTag(name) {
+    await savedSiteStore.deleteTag(name)
+    const activeTags = get().activeTags.filter((t) => t !== name)
+    const [sites, tags, resurfaceSites] = await Promise.all([
+      querySites(get().searchQuery, activeTags, get().sortOrder),
+      queryTags(),
+      queryResurface(),
+    ])
+    set({ sites, tags, activeTags, resurfaceSites })
   },
 }))

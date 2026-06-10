@@ -97,6 +97,27 @@ class SavedSiteStore {
   async setPinned(id: number, pinned: boolean): Promise<void> {
     await db.savedSites.update(id, { pinned })
   }
+
+  async renameTag(oldName: string, newName: string): Promise<void> {
+    const all = await db.savedSites.toArray()
+    for (const site of all) {
+      if (site.id !== undefined && site.tags.includes(oldName)) {
+        await db.savedSites.update(site.id, {
+          tags: site.tags.map((t) => (t === oldName ? newName : t)),
+        })
+      }
+    }
+  }
+
+  async deleteTag(name: string): Promise<void> {
+    const all = await db.savedSites.toArray()
+    for (const site of all) {
+      if (site.id !== undefined && site.tags.includes(name)) {
+        const next = site.tags.filter((t) => t !== name)
+        await db.savedSites.update(site.id, { tags: next.length > 0 ? next : ["Uncategorized"] })
+      }
+    }
+  }
 }
 
 export const savedSiteStore = new SavedSiteStore()

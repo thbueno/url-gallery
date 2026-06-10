@@ -14,6 +14,7 @@ import {
 import { useEffect, useRef, useState } from "react"
 
 import { CategoryFilter } from "@/components/gallery/CategoryFilter"
+import { ManageTagsSheet } from "@/components/gallery/ManageTagsSheet"
 import { SiteCard } from "@/components/gallery/SiteCard"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +24,7 @@ import { savedSiteStore } from "@/lib/store"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { type SortOrder, useGalleryStore } from "@/store/galleryStore"
+import { useTagSettingsStore } from "@/store/tagSettingsStore"
 
 // ── Column count from container width ────────────────────────────────────────
 
@@ -189,9 +191,20 @@ export default function GalleryPage() {
   const updateSiteTags = useGalleryStore((s) => s.updateSiteTags)
   const togglePin = useGalleryStore((s) => s.togglePin)
   const deleteSite = useGalleryStore((s) => s.deleteSite)
+  const renameTag = useGalleryStore((s) => s.renameTag)
+  const deleteTag = useGalleryStore((s) => s.deleteTag)
+
+  const pinnedTags = useTagSettingsStore((s) => s.pinnedTags)
+  const customTags = useTagSettingsStore((s) => s.customTags)
+  const hydrateTags = useTagSettingsStore((s) => s.hydrate)
+  const togglePinTag = useTagSettingsStore((s) => s.togglePinTag)
+  const addCustomTag = useTagSettingsStore((s) => s.addCustomTag)
+  const removeCustomTag = useTagSettingsStore((s) => s.removeCustomTag)
+  const renameCustomTag = useTagSettingsStore((s) => s.renameCustomTag)
 
   const [showPermissionBanner, setShowPermissionBanner] = useState(false)
   const [isSeeding, setIsSeeding] = useState(false)
+  const [manageTagsOpen, setManageTagsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
       return localStorage.getItem("sidebar-collapsed") === "true"
@@ -214,7 +227,8 @@ export default function GalleryPage() {
     chrome.storage.local.get("permissionDeclined", (result) => {
       if (result.permissionDeclined === true) setShowPermissionBanner(true)
     })
-  }, [])
+    hydrateTags()
+  }, [hydrateTags])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const cols = useColumnCount(scrollRef)
@@ -261,6 +275,28 @@ export default function GalleryPage() {
     setSortOrder(order)
   }
 
+  async function handleTagRename(oldName: string, newName: string) {
+    await renameTag(oldName, newName)
+    await renameCustomTag(oldName, newName)
+  }
+
+  async function handleTagDelete(name: string) {
+    await deleteTag(name)
+    await removeCustomTag(name)
+  }
+
+  async function handleTagAdd(name: string) {
+    await addCustomTag(name)
+  }
+
+  // Merge site-derived tags with custom tags (count 0 for unassigned custom tags)
+  const allTagsForSheet = [
+    ...tags,
+    ...customTags
+      .filter((ct) => !tags.some((st) => st.name === ct))
+      .map((ct) => ({ name: ct, count: 0 })),
+  ]
+
   const totalCount = tags.reduce((n, c) => n + c.count, 0)
 
   return (
@@ -291,12 +327,25 @@ export default function GalleryPage() {
         </div>
 
         {!sidebarCollapsed && (
-          <CategoryFilter
-            tags={tags}
-            activeTags={activeTags}
-            totalCount={totalCount}
-            onSelect={setActiveTags}
-          />
+          <>
+            <CategoryFilter
+              tags={tags}
+              activeTags={activeTags}
+              pinnedTags={pinnedTags}
+              totalCount={totalCount}
+              onSelect={setActiveTags}
+              onTogglePinTag={togglePinTag}
+            />
+            <div className="mt-auto border-t border-sidebar-border px-2 py-2">
+              <button
+                type="button"
+                onClick={() => setManageTagsOpen(true)}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground transition-colors"
+              >
+                Manage tags…
+              </button>
+            </div>
+          </>
         )}
       </aside>
 
@@ -481,6 +530,15 @@ export default function GalleryPage() {
           )}
         </div>
       </main>
+
+      <ManageTagsSheet
+        open={manageTagsOpen}
+        onOpenChange={setManageTagsOpen}
+        tags={allTagsForSheet}
+        onRename={handleTagRename}
+        onDelete={handleTagDelete}
+        onAdd={handleTagAdd}
+      />
     </div>
   )
 }
