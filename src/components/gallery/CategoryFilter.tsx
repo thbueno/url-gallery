@@ -28,11 +28,7 @@ export function CategoryFilter({
   const showUncategorizedNotice = uncategorizedCount > 0 && totalCount > 0
 
   function toggleTag(name: string) {
-    if (activeTags.includes(name)) {
-      onSelect(activeTags.filter((t) => t !== name))
-    } else {
-      onSelect([...activeTags, name])
-    }
+    onSelect(activeTags.includes(name) ? [] : [name])
   }
 
   return (
