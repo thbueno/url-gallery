@@ -1,6 +1,7 @@
 import "@/style.css"
 
 import { useVirtualizer } from "@tanstack/react-virtual"
+import { AnimatePresence, motion } from "framer-motion"
 import {
   BookmarkIcon,
   ClockIcon,
@@ -205,6 +206,9 @@ export default function GalleryPage() {
   const [showPermissionBanner, setShowPermissionBanner] = useState(false)
   const [isSeeding, setIsSeeding] = useState(false)
   const [manageTagsOpen, setManageTagsOpen] = useState(false)
+  const [filterVersion, setFilterVersion] = useState(0)
+  const hasMounted = useRef(false)
+  const isFirstActiveTags = useRef(true)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
       return localStorage.getItem("sidebar-collapsed") === "true"
@@ -245,6 +249,19 @@ export default function GalleryPage() {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    hasMounted.current = true
+  }, [])
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: activeTags change triggers animation version bump
+  useEffect(() => {
+    if (isFirstActiveTags.current) {
+      isFirstActiveTags.current = false
+      return
+    }
+    setFilterVersion((v) => v + 1)
+  }, [activeTags])
 
   async function handleCardClick(site: SavedSite) {
     if (site.id !== undefined) {
@@ -353,7 +370,7 @@ export default function GalleryPage() {
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
         <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-2.5">
-          <div className="relative flex-1">
+          <div className="relative w-56">
             <SearchIcon
               size={13}
               className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -374,6 +391,25 @@ export default function GalleryPage() {
                 <XIcon size={13} />
               </button>
             )}
+          </div>
+
+          {/* Pinned tag chips */}
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
+            {pinnedTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setActiveTags(activeTags.includes(tag) ? [] : [tag])}
+                className={cn(
+                  "shrink-0 rounded-full px-2.5 py-0.5 text-xs transition-colors",
+                  activeTags.includes(tag)
+                    ? "bg-accent font-medium text-accent-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                )}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
 
           {/* Sort toggle */}
@@ -508,21 +544,33 @@ export default function GalleryPage() {
                       paddingBottom: CARD_GAP,
                     }}
                   >
-                    <div
-                      className="grid gap-4"
-                      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-                    >
-                      {rowSites.map((site) => (
-                        <SiteCard
-                          key={site.id ?? site.url}
-                          site={site}
-                          onClick={handleCardClick}
-                          onTagsChange={handleTagsChange}
-                          onPinToggle={handlePinToggle}
-                          onDelete={handleDelete}
-                        />
-                      ))}
-                    </div>
+                    <AnimatePresence>
+                      <motion.div
+                        key={filterVersion}
+                        initial={hasMounted.current ? { opacity: 0, y: 8 } : false}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          duration: 0.18,
+                          delay: Math.min(virtualRow.index, 10) * 0.03,
+                        }}
+                      >
+                        <div
+                          className="grid gap-4"
+                          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+                        >
+                          {rowSites.map((site) => (
+                            <SiteCard
+                              key={site.id ?? site.url}
+                              site={site}
+                              onClick={handleCardClick}
+                              onTagsChange={handleTagsChange}
+                              onPinToggle={handlePinToggle}
+                              onDelete={handleDelete}
+                            />
+                          ))}
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
                 )
               })}
