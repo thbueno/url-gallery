@@ -15,12 +15,12 @@ import {
 import { useEffect, useRef, useState } from "react"
 
 import { CategoryFilter } from "@/components/gallery/CategoryFilter"
-import { ManageTagsSheet } from "@/components/gallery/ManageTagsSheet"
 import { SiteCard } from "@/components/gallery/SiteCard"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ALL_TAGS } from "@/lib/categorizer"
+import { parseMessage } from "@/lib/messages"
 import { savedSiteStore } from "@/lib/store"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
@@ -205,7 +205,6 @@ export default function GalleryPage() {
 
   const [showPermissionBanner, setShowPermissionBanner] = useState(false)
   const [isSeeding, setIsSeeding] = useState(false)
-  const [manageTagsOpen, setManageTagsOpen] = useState(false)
   const [filterVersion, setFilterVersion] = useState(0)
   const hasMounted = useRef(false)
   const isFirstActiveTags = useRef(true)
@@ -248,6 +247,18 @@ export default function GalleryPage() {
 
   useEffect(() => {
     load()
+  }, [load])
+
+  useEffect(() => {
+    const channel = new BroadcastChannel("url-gallery")
+    channel.onmessage = (event) => {
+      try {
+        if (parseMessage(event.data).type === "SITE_SAVED") load()
+      } catch {
+        // ignore messages this tab doesn't care about
+      }
+    }
+    return () => channel.close()
   }, [load])
 
   useEffect(() => {
@@ -307,7 +318,7 @@ export default function GalleryPage() {
   }
 
   // Merge site-derived tags with custom tags (count 0 for unassigned custom tags)
-  const allTagsForSheet = [
+  const mergedTags = [
     ...tags,
     ...customTags
       .filter((ct) => !tags.some((st) => st.name === ct))
@@ -344,25 +355,17 @@ export default function GalleryPage() {
         </div>
 
         {!sidebarCollapsed && (
-          <>
-            <CategoryFilter
-              tags={tags}
-              activeTags={activeTags}
-              pinnedTags={pinnedTags}
-              totalCount={totalCount}
-              onSelect={setActiveTags}
-              onTogglePinTag={togglePinTag}
-            />
-            <div className="mt-auto border-t border-sidebar-border px-2 py-2">
-              <button
-                type="button"
-                onClick={() => setManageTagsOpen(true)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground transition-colors"
-              >
-                Manage tags…
-              </button>
-            </div>
-          </>
+          <CategoryFilter
+            tags={mergedTags}
+            activeTags={activeTags}
+            pinnedTags={pinnedTags}
+            totalCount={totalCount}
+            onSelect={setActiveTags}
+            onTogglePinTag={togglePinTag}
+            onRenameTag={handleTagRename}
+            onDeleteTag={handleTagDelete}
+            onAddTag={handleTagAdd}
+          />
         )}
       </aside>
 
@@ -578,15 +581,6 @@ export default function GalleryPage() {
           )}
         </div>
       </main>
-
-      <ManageTagsSheet
-        open={manageTagsOpen}
-        onOpenChange={setManageTagsOpen}
-        tags={allTagsForSheet}
-        onRename={handleTagRename}
-        onDelete={handleTagDelete}
-        onAdd={handleTagAdd}
-      />
     </div>
   )
 }

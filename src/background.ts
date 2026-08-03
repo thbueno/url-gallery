@@ -38,6 +38,8 @@ async function handleMessage(raw: unknown): Promise<{ ok: boolean; error?: strin
         tags,
       })
 
+      new BroadcastChannel("url-gallery").postMessage({ type: "SITE_SAVED" })
+
       return { ok: true }
     }
 

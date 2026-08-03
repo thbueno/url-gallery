@@ -11,14 +11,20 @@ export const SaveRequestSchema = z.object({
   declaredType: z.string().optional(),
 })
 
+export const SiteSavedSchema = z.object({
+  type: z.literal("SITE_SAVED"),
+})
+
 // ── TypeScript types (inferred from schemas) ───────────────────────────────────
 
 export type SaveRequest = z.infer<typeof SaveRequestSchema>
+export type SiteSaved = z.infer<typeof SiteSavedSchema>
 
 // ── Union ──────────────────────────────────────────────────────────────────────
 
 export const MessageSchema = z.discriminatedUnion("type", [
   SaveRequestSchema,
+  SiteSavedSchema,
   // Add future messages here
 ])
 
