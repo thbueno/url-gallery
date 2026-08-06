@@ -4,7 +4,7 @@ Read this before writing any code. These rules encode settled decisions from the
 
 ## Project shape
 
-Browser extension (MV3) built with Plasmo. Favorites-only: a **SavedSite** is created only by an explicit fav-click, never by passive browsing. See CONTEXT.md for the full glossary.
+Browser extension (MV3) built with Plasmo. Favorites-only: a **SavedSite** is created only by an explicit save action, never by passive browsing. See CONTEXT.md for the full glossary.
 
 ## File layout
 
@@ -12,8 +12,7 @@ Browser extension (MV3) built with Plasmo. Favorites-only: a **SavedSite** is cr
 src/
   style.css              ← single source of truth for all design tokens (ADR 0007)
   background.ts          ← Plasmo service worker (thin: route + write only)
-  contents/              ← Plasmo content scripts
-    fav-button.tsx       ← injects the fav button; reads metadata as TEXT ONLY
+  popup.tsx              ← extension toolbar popup; save-entry-point, reads metadata as TEXT ONLY
   components/
     ui/                  ← shadcn primitives (never hand-write what shadcn provides)
     [feature]/           ← composed feature components
@@ -99,7 +98,7 @@ Components must be repositionable, restylable, and reparentable without edits to
 
 ## Cross-context messages
 
-All messages between the content script and the service worker must:
+All messages between the popup (or any content script) and the service worker must:
 
 1. Be defined in `src/lib/messages.ts` as a **discriminated union** (a `type` field is mandatory).
 2. Have a corresponding **Zod schema** in the same file.
@@ -113,7 +112,7 @@ The service worker is a thin synchronous handler + storage writer. **No timers, 
 
 ## Image handling rules
 
-- The content script reads **text only**: imageUrl, faviconUrl, title, type. It never touches image bytes.
+- The popup (or content script, if one exists) reads **text only**: imageUrl, faviconUrl, title, type. It never touches image bytes.
 - The service worker fetches the image and resizes it via `createImageBitmap` + `OffscreenCanvas`. No offscreen document.
 - Blobs/ArrayBuffers cannot cross `chrome.runtime.sendMessage` (JSON-only). Never try to pass binary data in a message.
 
@@ -155,3 +154,17 @@ PermissionGate, Grid, Search, and CategoryFilter: verify manually in v1.
 - **ADR 0005** — shadcn New York + Zinc
 - **ADR 0006** — Zod message contracts
 - **ADR 0007** — single-source design tokens (`src/style.css`) + dev-only design-system page + component modularity
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues (`gh` CLI); external PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary — no custom mapping. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.

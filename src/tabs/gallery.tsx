@@ -348,17 +348,38 @@ export default function GalleryPage() {
         </div>
 
         {!sidebarCollapsed && (
-          <CategoryFilter
-            tags={mergedTags}
-            activeTags={activeTags}
-            pinnedTags={pinnedTags}
-            totalCount={totalCount}
-            onSelect={setActiveTags}
-            onTogglePinTag={togglePinTag}
-            onRenameTag={handleTagRename}
-            onDeleteTag={handleTagDelete}
-            onAddTag={handleTagAdd}
-          />
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <CategoryFilter
+              tags={mergedTags}
+              activeTags={activeTags}
+              pinnedTags={pinnedTags}
+              totalCount={totalCount}
+              onSelect={setActiveTags}
+              onTogglePinTag={togglePinTag}
+              onRenameTag={handleTagRename}
+              onDeleteTag={handleTagDelete}
+              onAddTag={handleTagAdd}
+            />
+          </div>
+        )}
+
+        {!sidebarCollapsed && process.env.NODE_ENV === "development" && (
+          <div className="mt-auto shrink-0 border-t border-sidebar-border p-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={isSeeding}
+              className="h-7 w-full justify-start px-2 text-[11px] text-muted-foreground"
+              onClick={async () => {
+                setIsSeeding(true)
+                await seedDatabase()
+                await load()
+                setIsSeeding(false)
+              }}
+            >
+              {isSeeding ? "Seeding…" : "Seed DB"}
+            </Button>
+          </div>
         )}
       </aside>
 
@@ -389,62 +410,41 @@ export default function GalleryPage() {
             )}
           </div>
 
-          {/* Pinned tag chips — segmented pill control */}
-          <div className="flex min-w-0 max-w-xs shrink-0 items-center gap-1 overflow-x-auto rounded-full bg-muted p-1">
-            <button
-              type="button"
-              onClick={() => setActiveTags([])}
-              className={cn(
-                "shrink-0 rounded-full px-3 py-1.5 text-xs transition-colors",
-                activeTags.length === 0
-                  ? "bg-foreground font-medium text-background"
-                  : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
-              )}
-            >
-              All
-            </button>
-            {pinnedTags.map((tag) => (
+          {/* Pinned tag chips — segmented pill control, centered in header */}
+          <div className="flex flex-1 justify-center">
+            <div className="flex min-w-0 max-w-xs shrink-0 items-center gap-1 overflow-x-auto rounded-full bg-muted p-1">
               <button
-                key={tag}
                 type="button"
-                onClick={() => setActiveTags(activeTags.includes(tag) ? [] : [tag])}
+                onClick={() => setActiveTags([])}
                 className={cn(
                   "shrink-0 rounded-full px-3 py-1.5 text-xs transition-colors",
-                  activeTags.includes(tag)
+                  activeTags.length === 0
                     ? "bg-foreground font-medium text-background"
                     : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
                 )}
               >
-                {tag}
+                All
               </button>
-            ))}
+              {pinnedTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setActiveTags(activeTags.includes(tag) ? [] : [tag])}
+                  className={cn(
+                    "shrink-0 rounded-full px-3 py-1.5 text-xs transition-colors",
+                    activeTags.includes(tag)
+                      ? "bg-foreground font-medium text-background"
+                      : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                  )}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <span
-            className={cn(
-              "ml-auto shrink-0 tabular-nums text-xs text-muted-foreground",
-              isLoading && "opacity-0"
-            )}
-          >
-            {sites.length} site{sites.length !== 1 ? "s" : ""}
-          </span>
-
-          {process.env.NODE_ENV === "development" && (
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={isSeeding}
-              className="h-7 px-2 text-[11px] text-muted-foreground"
-              onClick={async () => {
-                setIsSeeding(true)
-                await seedDatabase()
-                await load()
-                setIsSeeding(false)
-              }}
-            >
-              {isSeeding ? "Seeding…" : "Seed DB"}
-            </Button>
-          )}
+          {/* Spacer to balance the search input width, keeping the pill row visually centered */}
+          <div className="w-56 shrink-0" aria-hidden="true" />
         </div>
 
         {showPermissionBanner && (
