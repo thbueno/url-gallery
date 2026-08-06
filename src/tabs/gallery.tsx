@@ -30,7 +30,7 @@ import { useTagSettingsStore } from "@/store/tagSettingsStore"
 // ── Column count from container width ────────────────────────────────────────
 
 const MIN_CARD_WIDTH = 220 // px — matches --card-min-width token (14rem ≈ 224px)
-const CARD_GAP = 16 // px — gap-4
+const CARD_GAP = 24 // px — gap-6, mirrors --gallery-gap
 
 function useColumnCount(containerRef: React.RefObject<HTMLDivElement | null>): number {
   const [cols, setCols] = useState(0)
@@ -78,13 +78,13 @@ function RevisitStrip({
         </button>
       </div>
       {!collapsed && (
-        <div className="flex gap-3 overflow-x-auto pb-1">
+        <div className="flex gap-4 overflow-x-auto pb-1">
           {sites.map((site) => (
             <SiteCard
               key={site.id ?? site.url}
               site={site}
               onClick={onOpen}
-              className="w-40 shrink-0 aspect-[4/3]"
+              className="w-44 shrink-0"
             />
           ))}
         </div>
@@ -240,8 +240,8 @@ export default function GalleryPage() {
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => scrollRef.current,
-    // Estimate based on 4:3 card at MIN_CARD_WIDTH + gap; measureElement refines it
-    estimateSize: () => Math.round((MIN_CARD_WIDTH * 3) / 4) + CARD_GAP,
+    // Estimate based on aspect-video image + content block at MIN_CARD_WIDTH + gap; measureElement refines it
+    estimateSize: () => Math.round((MIN_CARD_WIDTH * 9) / 16) + 96 + CARD_GAP,
     overscan: 3,
   })
 
@@ -372,7 +372,7 @@ export default function GalleryPage() {
       {/* ── Main ── */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-2.5">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
           <div className="relative w-56">
             <SearchIcon
               size={13}
@@ -396,18 +396,18 @@ export default function GalleryPage() {
             )}
           </div>
 
-          {/* Pinned tag chips */}
-          <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
+          {/* Pinned tag chips — segmented pill control */}
+          <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto rounded-full bg-muted p-1">
             {pinnedTags.map((tag) => (
               <button
                 key={tag}
                 type="button"
                 onClick={() => setActiveTags(activeTags.includes(tag) ? [] : [tag])}
                 className={cn(
-                  "shrink-0 rounded-full px-2.5 py-0.5 text-xs transition-colors",
+                  "shrink-0 rounded-full px-3 py-1.5 text-xs transition-colors",
                   activeTags.includes(tag)
-                    ? "bg-accent font-medium text-accent-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                    ? "bg-foreground font-medium text-background"
+                    : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
                 )}
               >
                 {tag}
@@ -475,16 +475,16 @@ export default function GalleryPage() {
         )}
 
         {/* Scroll container — bounded height required for virtualization */}
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto p-4">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto p-6">
           {/* Loading skeleton or empty first-render */}
           {(isLoading || cols === 0) && (
             <div
-              className="grid gap-4"
+              className="grid gap-6"
               style={{ gridTemplateColumns: `repeat(${cols || 4}, minmax(0, 1fr))` }}
             >
               {Array.from({ length: (cols || 4) * 3 }).map((_, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: stable skeleton list
-                <Skeleton key={i} className="aspect-[4/3] rounded-card" />
+                <Skeleton key={i} className="aspect-[4/5] rounded-card" />
               ))}
             </div>
           )}
@@ -558,7 +558,7 @@ export default function GalleryPage() {
                         }}
                       >
                         <div
-                          className="grid gap-4"
+                          className="grid gap-6"
                           style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                         >
                           {rowSites.map((site) => (

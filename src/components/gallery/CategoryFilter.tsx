@@ -106,7 +106,7 @@ export function CategoryFilter({
   }
 
   return (
-    <nav className="flex flex-col gap-0.5 px-2 pb-4">
+    <nav className="flex flex-col gap-1 px-2 pb-4">
       <div className="mb-1 flex items-center justify-between px-2">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Tags
