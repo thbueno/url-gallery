@@ -386,38 +386,38 @@ export default function GalleryPage() {
       {/* ── Main ── */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
+        <div className="flex shrink-0 items-center gap-2 px-4 py-3.5">
           <div className="relative w-56">
             <SearchIcon
-              size={13}
-              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
             />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search saved sites…"
-              className="h-8 pl-7 pr-7 text-xs"
+              placeholder="search..."
+              className="h-9 rounded-full pl-8 pr-8 text-sm"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 aria-label="Clear search"
               >
-                <XIcon size={13} />
+                <XIcon size={16} />
               </button>
             )}
           </div>
 
           {/* Pinned tag chips — segmented pill control, centered in header */}
           <div className="flex flex-1 justify-center">
-            <div className="flex min-w-0 max-w-xs shrink-0 items-center gap-1 overflow-x-auto rounded-full bg-muted p-1">
+            <div className="scrollbar-hide flex min-w-0 max-w-xl shrink-0 items-center gap-1 overflow-x-auto rounded-full bg-muted p-1">
               <button
                 type="button"
                 onClick={() => setActiveTags([])}
                 className={cn(
-                  "shrink-0 rounded-full px-3 py-1.5 text-xs transition-colors",
+                  "shrink-0 rounded-full px-3.5 py-2 text-sm transition-colors",
                   activeTags.length === 0
                     ? "bg-foreground font-medium text-background"
                     : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
@@ -431,7 +431,7 @@ export default function GalleryPage() {
                   type="button"
                   onClick={() => setActiveTags(activeTags.includes(tag) ? [] : [tag])}
                   className={cn(
-                    "shrink-0 rounded-full px-3 py-1.5 text-xs transition-colors",
+                    "shrink-0 rounded-full px-3.5 py-2 text-sm transition-colors",
                     activeTags.includes(tag)
                       ? "bg-foreground font-medium text-background"
                       : "text-muted-foreground hover:bg-background/60 hover:text-foreground"

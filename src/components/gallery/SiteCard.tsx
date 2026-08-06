@@ -162,7 +162,7 @@ export function SiteCard({
               >
                 <span
                   className={cn(
-                    "flex shrink-0 cursor-pointer items-center gap-1 rounded bg-muted px-1.5 py-0.5",
+                    "flex shrink-0 cursor-pointer items-center gap-1 rounded-full bg-muted px-2.5 py-1",
                     "text-[10px] leading-none text-muted-foreground hover:bg-muted/70"
                   )}
                   aria-label="Edit tags"
@@ -212,7 +212,7 @@ export function SiteCard({
           ) : (
             <span
               className={cn(
-                "flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5",
+                "flex shrink-0 items-center gap-1 rounded-full bg-muted px-2.5 py-1",
                 "text-[10px] leading-none text-muted-foreground"
               )}
             >
