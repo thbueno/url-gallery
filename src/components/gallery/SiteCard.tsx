@@ -59,20 +59,24 @@ export function SiteCard({
       onClick={() => onClick(site)}
       className={cn(
         "group flex w-full cursor-pointer flex-col overflow-hidden rounded-card",
-        "border border-border bg-card",
+        "bg-card",
         "transition-colors duration-200",
-        "hover:bg-accent hover:ring-2 hover:ring-[hsl(var(--card-hover-ring))]",
+        "hover:bg-accent",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         "text-left",
         className
       )}
     >
-      {/* Thumbnail or fallback — clean, nothing overlaid */}
+      {/* Thumbnail or fallback, with floating glass control pill */}
       <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-t-card bg-muted">
         {thumbUrl ? (
-          <img src={thumbUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img
+            src={thumbUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full rounded-t-card object-cover"
+          />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center rounded-t-card">
             {site.favicon ? (
               <img src={site.favicon} alt="" className="h-10 w-10 opacity-50" />
             ) : (
@@ -82,16 +86,72 @@ export function SiteCard({
             )}
           </div>
         )}
+
+        {/* Glass control pill — pin, delete, floating over the image */}
+        {(onPinToggle || onDelete) && (
+          <div
+            className={cn(
+              "absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full bg-black/40 p-1 backdrop-blur-md transition-opacity",
+              site.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            )}
+          >
+            {onPinToggle && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onPinToggle(site, !site.pinned)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation()
+                    onPinToggle(site, !site.pinned)
+                  }
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                aria-label={site.pinned ? "Unpin" : "Pin"}
+                className={cn(
+                  "flex size-6 cursor-pointer items-center justify-center rounded-full",
+                  "text-white/90 hover:text-white"
+                )}
+              >
+                <PinIcon size={12} className={cn(site.pinned && "fill-white")} />
+              </span>
+            )}
+
+            {onDelete && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDelete(site)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation()
+                    onDelete(site)
+                  }
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                aria-label="Delete"
+                className={cn(
+                  "flex size-6 cursor-pointer items-center justify-center rounded-full",
+                  "text-white/90 hover:text-red-400"
+                )}
+              >
+                <Trash2Icon size={12} />
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Content block — title, domain, tag chip, actions */}
+      {/* Content block — title, domain + tag chip */}
       <div className="flex flex-col gap-2 p-3.5">
         <p className="truncate text-sm font-medium leading-tight text-card-foreground">
           {site.title}
         </p>
 
-        <div className="flex items-center justify-between gap-1.5">
-          <span className="min-w-0 truncate text-xs text-muted-foreground">{domain}</span>
+        <div className="flex items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{domain}</span>
 
           {onTagsChange ? (
             <DropdownMenu>
@@ -105,8 +165,9 @@ export function SiteCard({
                     "flex shrink-0 cursor-pointer items-center gap-1 rounded bg-muted px-1.5 py-0.5",
                     "text-[10px] leading-none text-muted-foreground hover:bg-muted/70"
                   )}
+                  aria-label="Edit tags"
                 >
-                  <TagIcon size={9} />
+                  <TagIcon size={10} />
                   {site.tags.length > 1
                     ? `${site.tags[0]} +${site.tags.length - 1}`
                     : (site.tags[0] ?? "Uncategorized")}
@@ -149,64 +210,17 @@ export function SiteCard({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground">
+            <span
+              className={cn(
+                "flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5",
+                "text-[10px] leading-none text-muted-foreground"
+              )}
+            >
+              <TagIcon size={10} />
               {site.tags[0] ?? "Uncategorized"}
             </span>
           )}
         </div>
-
-        {/* Actions row — pin, tag-edit affordance, delete */}
-        {(onPinToggle || onDelete) && (
-          <div className="flex items-center gap-1 pt-0.5">
-            {onPinToggle && (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onPinToggle(site, !site.pinned)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation()
-                    onPinToggle(site, !site.pinned)
-                  }
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-                aria-label={site.pinned ? "Unpin" : "Pin"}
-                className={cn(
-                  "flex size-6 cursor-pointer items-center justify-center rounded-md transition-opacity",
-                  "text-muted-foreground hover:text-foreground",
-                  site.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                )}
-              >
-                <PinIcon size={12} className={cn(site.pinned && "fill-foreground")} />
-              </span>
-            )}
-
-            {onDelete && (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDelete(site)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation()
-                    onDelete(site)
-                  }
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-                aria-label="Delete"
-                className={cn(
-                  "flex size-6 cursor-pointer items-center justify-center rounded-md transition-opacity",
-                  "text-muted-foreground hover:text-destructive",
-                  "opacity-0 group-hover:opacity-100"
-                )}
-              >
-                <Trash2Icon size={12} />
-              </span>
-            )}
-          </div>
-        )}
       </div>
     </button>
   )

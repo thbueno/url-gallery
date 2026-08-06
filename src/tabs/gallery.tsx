@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from "framer-motion"
 import {
   BookmarkIcon,
   ClockIcon,
-  FlameIcon,
   ImageIcon,
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
@@ -24,7 +23,7 @@ import { parseMessage } from "@/lib/messages"
 import { savedSiteStore } from "@/lib/store"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
-import { type SortOrder, useGalleryStore } from "@/store/galleryStore"
+import { useGalleryStore } from "@/store/galleryStore"
 import { useTagSettingsStore } from "@/store/tagSettingsStore"
 
 // ── Column count from container width ────────────────────────────────────────
@@ -182,13 +181,11 @@ export default function GalleryPage() {
   const tags = useGalleryStore((s) => s.tags)
   const resurfaceSites = useGalleryStore((s) => s.resurfaceSites)
   const activeTags = useGalleryStore((s) => s.activeTags)
-  const sortOrder = useGalleryStore((s) => s.sortOrder)
   const isLoading = useGalleryStore((s) => s.isLoading)
   const searchQuery = useGalleryStore((s) => s.searchQuery)
   const load = useGalleryStore((s) => s.load)
   const setSearchQuery = useGalleryStore((s) => s.setSearchQuery)
   const setActiveTags = useGalleryStore((s) => s.setActiveTags)
-  const setSortOrder = useGalleryStore((s) => s.setSortOrder)
   const updateSiteTags = useGalleryStore((s) => s.updateSiteTags)
   const togglePin = useGalleryStore((s) => s.togglePin)
   const deleteSite = useGalleryStore((s) => s.deleteSite)
@@ -299,10 +296,6 @@ export default function GalleryPage() {
     }
   }
 
-  function handleSortOrder(order: SortOrder) {
-    setSortOrder(order)
-  }
-
   async function handleTagRename(oldName: string, newName: string) {
     await renameTag(oldName, newName)
     await renameCustomTag(oldName, newName)
@@ -397,7 +390,19 @@ export default function GalleryPage() {
           </div>
 
           {/* Pinned tag chips — segmented pill control */}
-          <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto rounded-full bg-muted p-1">
+          <div className="flex min-w-0 max-w-xs shrink-0 items-center gap-1 overflow-x-auto rounded-full bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setActiveTags([])}
+              className={cn(
+                "shrink-0 rounded-full px-3 py-1.5 text-xs transition-colors",
+                activeTags.length === 0
+                  ? "bg-foreground font-medium text-background"
+                  : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+              )}
+            >
+              All
+            </button>
             {pinnedTags.map((tag) => (
               <button
                 key={tag}
@@ -415,37 +420,9 @@ export default function GalleryPage() {
             ))}
           </div>
 
-          {/* Sort toggle */}
-          <div className="flex shrink-0 items-center gap-1 rounded-md border bg-muted/40 p-0.5">
-            <Button
-              size="sm"
-              variant="ghost"
-              className={cn(
-                "h-7 gap-1 px-2 text-[11px]",
-                sortOrder === "savedAt" && "bg-background shadow-sm"
-              )}
-              onClick={() => handleSortOrder("savedAt")}
-            >
-              <ClockIcon size={11} />
-              Recent
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className={cn(
-                "h-7 gap-1 px-2 text-[11px]",
-                sortOrder === "openCount" && "bg-background shadow-sm"
-              )}
-              onClick={() => handleSortOrder("openCount")}
-            >
-              <FlameIcon size={11} />
-              Most used
-            </Button>
-          </div>
-
           <span
             className={cn(
-              "shrink-0 tabular-nums text-xs text-muted-foreground",
+              "ml-auto shrink-0 tabular-nums text-xs text-muted-foreground",
               isLoading && "opacity-0"
             )}
           >
