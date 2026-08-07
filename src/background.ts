@@ -15,30 +15,35 @@ async function handleMessage(raw: unknown): Promise<{ ok: boolean; error?: strin
     case "SAVE_REQUEST": {
       const domain = new URL(msg.url).hostname
       const siteName = domain.replace(/^www\./, "").split(".")[0]
-
-      let thumbBlob: Blob | null = null
-      if (msg.imageUrl || msg.faviconUrl) {
-        try {
-          thumbBlob = await fetchAndResize(
-            msg.imageUrl ?? msg.faviconUrl ?? "",
-            msg.faviconUrl ?? ""
-          )
-        } catch {
-          thumbBlob = null
-        }
-      }
-
       const tags = categorize(msg.declaredType, siteName, domain)
 
-      await savedSiteStore.add({
+      const created = await savedSiteStore.add({
         url: msg.url,
         title: msg.title,
         favicon: msg.faviconUrl ?? null,
-        thumb: thumbBlob,
+        thumb: null,
         tags,
       })
 
       new BroadcastChannel("url-gallery").postMessage({ type: "SITE_SAVED" })
+
+      const id = created.id
+      if (id !== undefined && (msg.imageUrl || msg.faviconUrl)) {
+        // Fire-and-forget: backfill the real thumbnail after responding, so the
+        // popup's confirmation doesn't wait on the network fetch + resize.
+        ;(async () => {
+          try {
+            const thumbBlob = await fetchAndResize(
+              msg.imageUrl ?? msg.faviconUrl ?? "",
+              msg.faviconUrl ?? ""
+            )
+            await savedSiteStore.update(id, { thumb: thumbBlob })
+            new BroadcastChannel("url-gallery").postMessage({ type: "SITE_SAVED" })
+          } catch {
+            // Leave thumb as null; gallery falls back to favicon/letter placeholder.
+          }
+        })()
+      }
 
       return { ok: true }
     }
