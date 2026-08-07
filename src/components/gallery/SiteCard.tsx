@@ -238,6 +238,7 @@ export function SiteCard({
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
                         onPointerUp={(e) => e.stopPropagation()}
+                        onSelect={(e) => e.preventDefault()}
                       >
                         {tag}
                       </DropdownMenuCheckboxItem>
