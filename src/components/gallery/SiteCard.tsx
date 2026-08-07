@@ -164,15 +164,18 @@ export function SiteCard({
               >
                 <span
                   className={cn(
-                    "flex shrink-0 cursor-pointer items-center gap-1 px-1 py-1",
-                    "text-[10px] leading-none text-muted-foreground hover:text-foreground"
+                    "group flex shrink-0 cursor-pointer items-center gap-1 rounded-full border px-2.5 py-1",
+                    "text-[11px] leading-none text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
                   )}
                   aria-label="Edit tags"
                 >
                   {site.tags.length > 1
                     ? `${site.tags[0]} +${site.tags.length - 1}`
                     : (site.tags[0] ?? "Uncategorized")}
-                  <ChevronDownIcon size={10} />
+                  <ChevronDownIcon
+                    size={11}
+                    className="transition-transform duration-200 group-data-[state=open]:rotate-180"
+                  />
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent
