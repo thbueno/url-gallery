@@ -150,7 +150,6 @@ export function CategoryFilter({
         )}
       >
         <span>All</span>
-        <span className="tabular-nums text-xs text-muted-foreground">{totalCount}</span>
       </button>
 
       {tags.map((tag) => (
@@ -213,9 +212,6 @@ export function CategoryFilter({
                 )}
               >
                 <span className="min-w-0 truncate pr-9">{tag.name}</span>
-                <span className="ml-2 shrink-0 tabular-nums text-xs text-muted-foreground">
-                  {tag.count}
-                </span>
               </button>
 
               {/* Edit button */}

@@ -412,15 +412,15 @@ export default function GalleryPage() {
 
           {/* Pinned tag chips — segmented pill control, centered in header */}
           <div className="flex flex-1 justify-center">
-            <div className="scrollbar-hide flex min-w-0 max-w-xl shrink-0 items-center gap-1 overflow-x-auto rounded-full bg-muted p-1">
+            <div className="scrollbar-hide flex min-w-0 max-w-xl shrink-0 items-center gap-1.5 overflow-x-auto rounded-full border border-border bg-background p-1.5">
               <button
                 type="button"
                 onClick={() => setActiveTags([])}
                 className={cn(
-                  "shrink-0 rounded-full px-3.5 py-2 text-sm transition-colors",
+                  "shrink-0 rounded-full px-4 py-2 text-sm transition-colors",
                   activeTags.length === 0
                     ? "bg-foreground font-medium text-background"
-                    : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 All
@@ -431,10 +431,10 @@ export default function GalleryPage() {
                   type="button"
                   onClick={() => setActiveTags(activeTags.includes(tag) ? [] : [tag])}
                   className={cn(
-                    "shrink-0 rounded-full px-3.5 py-2 text-sm transition-colors",
+                    "shrink-0 rounded-full px-4 py-2 text-sm transition-colors",
                     activeTags.includes(tag)
                       ? "bg-foreground font-medium text-background"
-                      : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {tag}
