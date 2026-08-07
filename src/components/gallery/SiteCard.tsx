@@ -3,6 +3,17 @@ import { useEffect, useState } from "react"
 import { ChevronDownIcon, PinIcon, TagIcon, Trash2Icon } from "lucide-react"
 
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -121,26 +132,44 @@ export function SiteCard({
             )}
 
             {onDelete && (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDelete(site)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation()
-                    onDelete(site)
-                  }
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-                aria-label="Delete"
-                className={cn(
-                  "flex size-6 cursor-pointer items-center justify-center rounded-full",
-                  "text-white/90 hover:text-red-400"
-                )}
-              >
-                <Trash2Icon size={12} />
-              </span>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <span
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.stopPropagation()
+                      }
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    aria-label="Delete"
+                    className={cn(
+                      "flex size-6 cursor-pointer items-center justify-center rounded-full",
+                      "text-white/90 hover:text-red-400"
+                    )}
+                  >
+                    <Trash2Icon size={12} />
+                  </span>
+                </AlertDialogTrigger>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete "{site.title}"?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action can't be undone. This will permanently remove the site from your
+                      gallery.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onDelete(site)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         )}

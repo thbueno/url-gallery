@@ -1,7 +1,18 @@
 import { useRef, useState } from "react"
 
-import { InfoIcon, PencilIcon, PinIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react"
+import { InfoIcon, PencilIcon, PinIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -35,7 +46,6 @@ export function CategoryFilter({
 }: CategoryFilterProps) {
   const [editingTag, setEditingTag] = useState<string | null>(null)
   const [editValue, setEditValue] = useState("")
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [addValue, setAddValue] = useState("")
   const [busy, setBusy] = useState(false)
@@ -52,7 +62,6 @@ export function CategoryFilter({
   function startEdit(name: string) {
     setEditingTag(name)
     setEditValue(name)
-    setConfirmDelete(null)
     setTimeout(() => editInputRef.current?.select(), 0)
   }
 
@@ -71,17 +80,11 @@ export function CategoryFilter({
   }
 
   async function handleDelete(name: string) {
-    if (confirmDelete !== name) {
-      setConfirmDelete(name)
-      setEditingTag(null)
-      return
-    }
     setBusy(true)
     try {
       await onDeleteTag(name)
     } finally {
       setBusy(false)
-      setConfirmDelete(null)
     }
   }
 
@@ -168,36 +171,37 @@ export function CategoryFilter({
                 disabled={busy}
                 className="h-6 min-w-0 flex-1 px-1.5 text-xs"
               />
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => handleDelete(tag.name)}
-                aria-label={`Delete ${tag.name}`}
-                className="shrink-0 text-muted-foreground hover:text-destructive"
-              >
-                <Trash2Icon size={12} />
-              </button>
-            </div>
-          ) : confirmDelete === tag.name ? (
-            <div className="flex min-w-0 flex-1 items-center justify-between rounded-md bg-destructive/5 px-2 py-1.5">
-              <span className="min-w-0 truncate text-sm text-muted-foreground">{tag.name}</span>
-              <div className="flex shrink-0 items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleDelete(tag.name)}
-                  disabled={busy}
-                  className="text-[10px] font-medium text-destructive hover:underline disabled:opacity-50"
-                >
-                  Delete
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(null)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <XIcon size={11} />
-                </button>
-              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    aria-label={`Delete ${tag.name}`}
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2Icon size={12} />
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete tag "{tag.name}"?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove the tag from all sites carrying it. This action can't be
+                      undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDelete(tag.name)}
+                      disabled={busy}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           ) : (
             <>
