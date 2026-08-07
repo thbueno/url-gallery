@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { ChevronDownIcon, PinIcon, TagIcon, Trash2Icon } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, PinIcon, TagIcon, Trash2Icon } from "lucide-react"
 
 import {
   AlertDialog,
@@ -33,6 +33,9 @@ interface SiteCardProps {
   onDelete?: (site: SavedSite) => void
   availableTags?: string[]
   className?: string
+  selectMode?: boolean
+  selected?: boolean
+  onToggleSelect?: (site: SavedSite) => void
 }
 
 function useBlobUrl(blob: Blob | null): string | undefined {
@@ -62,26 +65,66 @@ export function SiteCard({
   onDelete,
   availableTags,
   className,
+  selectMode,
+  selected,
+  onToggleSelect,
 }: SiteCardProps) {
   const thumbUrl = useBlobUrl(site.thumb)
   const domain = getDomain(site.url)
 
+  function handleCardClick() {
+    if (selectMode) {
+      onToggleSelect?.(site)
+    } else {
+      onClick(site)
+    }
+  }
+
   return (
     <button
       type="button"
-      onClick={() => onClick(site)}
+      onClick={handleCardClick}
       className={cn(
         "group flex w-full cursor-pointer flex-col overflow-hidden rounded-card",
         "bg-card",
         "transition-colors duration-200",
         "hover:bg-accent",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        selected && "ring-2 ring-ring ring-offset-2",
         "text-left",
         className
       )}
     >
       {/* Thumbnail or fallback, with floating glass control pill */}
       <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-t-card bg-muted">
+        {/* Selection checkbox — top-left, mirrors the glass pill's visual language */}
+        {selectMode && (
+          <div className="absolute left-2 top-2 z-10">
+            <span
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleSelect?.(site)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation()
+                  onToggleSelect?.(site)
+                }
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              aria-pressed={!!selected}
+              aria-label={selected ? "Deselect" : "Select"}
+              className={cn(
+                "flex size-6 cursor-pointer items-center justify-center rounded-md border backdrop-blur-md transition-colors",
+                selected
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-white/60 bg-black/40 text-transparent hover:border-white"
+              )}
+            >
+              <CheckIcon size={14} />
+            </span>
+          </div>
+        )}
         {thumbUrl ? (
           <img
             src={thumbUrl}

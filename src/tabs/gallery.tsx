@@ -27,6 +27,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ALL_TAGS } from "@/lib/categorizer"
@@ -223,6 +231,8 @@ export default function GalleryPage() {
   const [showPermissionBanner, setShowPermissionBanner] = useState(false)
   const [isSeeding, setIsSeeding] = useState(false)
   const [filterVersion, setFilterVersion] = useState(0)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const hasMounted = useRef(false)
   const isFirstActiveTags = useRef(true)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -313,6 +323,57 @@ export default function GalleryPage() {
   async function handleDelete(site: SavedSite) {
     if (site.id !== undefined) {
       await deleteSite(site.id)
+    }
+  }
+
+  function toggleSelectMode() {
+    setSelectMode((prev) => {
+      const next = !prev
+      if (!next) setSelectedIds(new Set())
+      return next
+    })
+  }
+
+  function handleToggleSelect(site: SavedSite) {
+    if (site.id === undefined) return
+    const id = site.id
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  async function handleBulkDelete() {
+    const ids = Array.from(selectedIds)
+    for (const id of ids) {
+      await deleteSite(id)
+    }
+    setSelectedIds(new Set())
+    setSelectMode(false)
+  }
+
+  async function handleBulkAddTag(tag: string) {
+    const targets = sites.filter((s) => s.id !== undefined && selectedIds.has(s.id))
+    for (const site of targets) {
+      if (site.id === undefined) continue
+      if (site.tags.includes(tag)) continue
+      const newTags = [...site.tags.filter((t) => t !== "Uncategorized"), tag]
+      await updateSiteTags(site.id, newTags)
+    }
+  }
+
+  async function handleBulkRemoveTag(tag: string) {
+    const targets = sites.filter((s) => s.id !== undefined && selectedIds.has(s.id))
+    for (const site of targets) {
+      if (site.id === undefined) continue
+      let newTags = site.tags.filter((t) => t !== tag)
+      if (newTags.length === 0) newTags = ["Uncategorized"]
+      await updateSiteTags(site.id, newTags)
     }
   }
 
@@ -455,41 +516,137 @@ export default function GalleryPage() {
             )}
           </div>
 
-          {/* Pinned tag chips — segmented pill control, centered in header */}
+          {/* Pinned tag chips (default) or bulk-action toolbar (select mode) — centered in header */}
           <div className="flex flex-1 justify-center">
-            <div className="scrollbar-hide flex min-w-0 max-w-xl shrink-0 items-center gap-1.5 overflow-x-auto rounded-full border border-border bg-background p-1.5">
-              <button
-                type="button"
-                onClick={() => setActiveTags([])}
-                className={cn(
-                  "shrink-0 rounded-full px-4 py-2 text-sm transition-colors",
-                  activeTags.length === 0
-                    ? "bg-foreground font-medium text-background"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                All
-              </button>
-              {pinnedTags.map((tag) => (
+            {selectMode ? (
+              <div className="flex min-w-0 max-w-2xl shrink-0 items-center gap-1 rounded-full border border-border bg-background px-2 py-1.5">
+                <span className="px-2 text-sm font-medium tabular-nums">
+                  {selectedIds.size} selected
+                </span>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" disabled={selectedIds.size === 0}>
+                      Add tag
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuLabel className="text-[10px]">
+                      Add tag to selected
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {mergedTags
+                      .filter((t) => t.name !== "Uncategorized")
+                      .map((t) => (
+                        <DropdownMenuItem key={t.name} onSelect={() => handleBulkAddTag(t.name)}>
+                          {t.name}
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" disabled={selectedIds.size === 0}>
+                      Remove tag
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuLabel className="text-[10px]">
+                      Remove tag from selected
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {mergedTags
+                      .filter((t) => t.name !== "Uncategorized")
+                      .map((t) => (
+                        <DropdownMenuItem key={t.name} onSelect={() => handleBulkRemoveTag(t.name)}>
+                          {t.name}
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={selectedIds.size === 0}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Delete {selectedIds.size} site{selectedIds.size === 1 ? "" : "s"}?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action can't be undone. This will permanently remove the selected sites
+                        from your gallery.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleBulkDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
                 <button
-                  key={tag}
                   type="button"
-                  onClick={() => setActiveTags(activeTags.includes(tag) ? [] : [tag])}
+                  onClick={() => setSelectedIds(new Set())}
+                  disabled={selectedIds.size === 0}
+                  className="px-2 text-xs text-muted-foreground/60 underline-offset-2 hover:underline disabled:pointer-events-none disabled:opacity-50"
+                >
+                  Clear
+                </button>
+              </div>
+            ) : (
+              <div className="scrollbar-hide flex min-w-0 max-w-xl shrink-0 items-center gap-1.5 overflow-x-auto rounded-full border border-border bg-background p-1.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveTags([])}
                   className={cn(
                     "shrink-0 rounded-full px-4 py-2 text-sm transition-colors",
-                    activeTags.includes(tag)
+                    activeTags.length === 0
                       ? "bg-foreground font-medium text-background"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {tag}
+                  All
                 </button>
-              ))}
-            </div>
+                {pinnedTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setActiveTags(activeTags.includes(tag) ? [] : [tag])}
+                    className={cn(
+                      "shrink-0 rounded-full px-4 py-2 text-sm transition-colors",
+                      activeTags.includes(tag)
+                        ? "bg-foreground font-medium text-background"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Spacer to balance the search input width, keeping the pill row visually centered */}
-          <div className="w-56 shrink-0" aria-hidden="true" />
+          {/* Right slot — select-mode entry point, balances the search input width */}
+          <div className="flex w-56 shrink-0 justify-end">
+            <Button variant={selectMode ? "outline" : "ghost"} size="sm" onClick={toggleSelectMode}>
+              {selectMode ? "Cancel" : "Select"}
+            </Button>
+          </div>
         </div>
 
         {showPermissionBanner && (
@@ -592,6 +749,9 @@ export default function GalleryPage() {
                               onPinToggle={handlePinToggle}
                               onDelete={handleDelete}
                               availableTags={mergedTags.map((t) => t.name)}
+                              selectMode={selectMode}
+                              selected={site.id !== undefined && selectedIds.has(site.id)}
+                              onToggleSelect={handleToggleSelect}
                             />
                           ))}
                         </div>
