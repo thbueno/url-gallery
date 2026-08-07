@@ -9,6 +9,7 @@ export const SaveRequestSchema = z.object({
   imageUrl: z.string().optional(),
   faviconUrl: z.string().optional(),
   declaredType: z.string().optional(),
+  screenshotDataUrl: z.string().optional(),
 })
 
 export const SiteSavedSchema = z.object({

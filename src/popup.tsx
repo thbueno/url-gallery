@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { GENERIC_OG_DOMAINS } from "@/lib/thumbnail-service"
 
 const PERMISSION_ORIGINS = ["https://*/*"]
 const DECLINED_KEY = "permissionDeclined"
@@ -57,6 +58,7 @@ export default function Popup() {
     let faviconUrl: string | undefined = tab.favIconUrl ?? undefined
     let title: string = tab.title ?? tab.url
     let declaredType: string | undefined
+    let screenshotDataUrl: string | undefined
 
     try {
       const [result] = await chrome.scripting.executeScript({
@@ -84,6 +86,16 @@ export default function Popup() {
       // executeScript fails on chrome:// pages and restricted origins — fall through
     }
 
+    const hostname = new URL(tab.url).hostname.replace(/^www\./, "")
+    if (GENERIC_OG_DOMAINS.includes(hostname)) {
+      try {
+        screenshotDataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" })
+      } catch {
+        // Capture can fail for various reasons — fall back to the existing
+        // imageUrl/faviconUrl chain in that case.
+      }
+    }
+
     try {
       const response = await chrome.runtime.sendMessage({
         type: "SAVE_REQUEST",
@@ -92,6 +104,7 @@ export default function Popup() {
         imageUrl,
         faviconUrl,
         declaredType,
+        screenshotDataUrl,
       })
       if (response?.ok) {
         setSaveState(permGranted ? "saved-full" : "saved-favicon")

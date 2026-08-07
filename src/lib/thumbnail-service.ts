@@ -2,6 +2,12 @@ const OUTPUT_WIDTH = 800
 const OUTPUT_HEIGHT = 450
 const WEBP_QUALITY = 0.82
 
+// Domains known to serve a generic, non-representative og:image to
+// unauthenticated server-side fetches (same branded card for every URL).
+// For these, the caller should prefer a client-side tab screenshot instead
+// of the fetched og:image.
+export const GENERIC_OG_DOMAINS = ["x.com", "twitter.com"]
+
 async function urlToBlob(url: string): Promise<Blob> {
   const response = await fetch(url)
   const blob = await response.blob()

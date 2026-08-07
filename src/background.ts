@@ -28,13 +28,17 @@ async function handleMessage(raw: unknown): Promise<{ ok: boolean; error?: strin
       new BroadcastChannel("url-gallery").postMessage({ type: "SITE_SAVED" })
 
       const id = created.id
-      if (id !== undefined && (msg.imageUrl || msg.faviconUrl)) {
+      if (id !== undefined && (msg.screenshotDataUrl || msg.imageUrl || msg.faviconUrl)) {
         // Fire-and-forget: backfill the real thumbnail after responding, so the
         // popup's confirmation doesn't wait on the network fetch + resize.
+        // A tab screenshot (when present) takes priority over the fetched
+        // og:image — some domains (see GENERIC_OG_DOMAINS) serve the same
+        // generic branded og:image to every unauthenticated request, so the
+        // fetch "succeeds" but produces a useless, non-representative thumbnail.
         ;(async () => {
           try {
             const thumbBlob = await fetchAndResize(
-              msg.imageUrl ?? msg.faviconUrl ?? "",
+              msg.screenshotDataUrl ?? msg.imageUrl ?? msg.faviconUrl ?? "",
               msg.faviconUrl ?? ""
             )
             await savedSiteStore.update(id, { thumb: thumbBlob })
