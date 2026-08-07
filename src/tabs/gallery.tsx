@@ -15,6 +15,17 @@ import { useEffect, useRef, useState } from "react"
 
 import { CategoryFilter } from "@/components/gallery/CategoryFilter"
 import { SiteCard } from "@/components/gallery/SiteCard"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -151,27 +162,36 @@ const SEED_DOMAINS = [
   "vercel.com",
 ]
 
+const SEED_TOTAL = 20
+const SEED_BACKDATED = 5
+
 async function seedDatabase(): Promise<void> {
   const now = Date.now()
   const DAY = 24 * 60 * 60 * 1000
-  for (let i = 0; i < 1000; i++) {
+
+  const sites = Array.from({ length: SEED_TOTAL }, (_, i) => {
     const domain = SEED_DOMAINS[i % SEED_DOMAINS.length] ?? "example.com"
     const tag = ALL_TAGS[i % ALL_TAGS.length] ?? "Uncategorized"
-    await savedSiteStore.add({
+    return {
       url: `https://${domain}/item-${i}`,
       title: `Seeded Site #${i + 1} — ${domain}`,
       favicon: null,
       thumb: null,
       tags: [tag],
-    })
-  }
-  // Backdate the last 20 records to 8 days ago — exercises the resurface strip
-  const all = await savedSiteStore.getAll()
-  for (const site of all.slice(-20)) {
-    if (site.id !== undefined) {
-      await savedSiteStore.update(site.id, { savedAt: now - 8 * DAY })
     }
-  }
+  })
+
+  const created = await savedSiteStore.bulkAdd(sites)
+
+  // Backdate the first SEED_BACKDATED records to 8 days ago — exercises the
+  // Revisit strip; the remaining SEED_TOTAL - SEED_BACKDATED stay fresh so the
+  // normal grid also has data to render.
+  const toBackdate = created.slice(0, SEED_BACKDATED)
+  await savedSiteStore.bulkUpdate(
+    toBackdate
+      .filter((site): site is SavedSite & { id: number } => site.id !== undefined)
+      .map((site) => ({ id: site.id, patch: { savedAt: now - 8 * DAY } }))
+  )
 }
 
 // ── Gallery page ─────────────────────────────────────────────────────────────
@@ -365,20 +385,45 @@ export default function GalleryPage() {
 
         {!sidebarCollapsed && process.env.NODE_ENV === "development" && (
           <div className="mt-auto shrink-0 border-t border-sidebar-border p-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={isSeeding}
-              className="h-7 w-full justify-start px-2 text-[11px] text-muted-foreground"
-              onClick={async () => {
-                setIsSeeding(true)
-                await seedDatabase()
-                await load()
-                setIsSeeding(false)
-              }}
-            >
-              {isSeeding ? "Seeding…" : "Seed DB"}
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={isSeeding}
+                  className="h-7 w-full justify-start px-2 text-[11px] text-muted-foreground"
+                >
+                  {isSeeding ? "Seeding…" : "Seed DB"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Seed the database with test data?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This inserts {SEED_TOTAL} synthetic test site records with fake URLs cycling
+                    through a hardcoded domain list (github.com, stackoverflow.com, youtube.com,
+                    twitter.com, reddit.com, figma.com, docs.google.com, npmjs.com, medium.com,
+                    vercel.com). It is not real bookmarks or externally-fetched data — purely local
+                    synthetic data for exercising the gallery UI. {SEED_BACKDATED} of the{" "}
+                    {SEED_TOTAL} records will be backdated to 8 days ago to exercise the Revisit
+                    strip; the rest stay fresh.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      setIsSeeding(true)
+                      await seedDatabase()
+                      await load()
+                      setIsSeeding(false)
+                    }}
+                  >
+                    Seed database
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         )}
       </aside>

@@ -57,6 +57,29 @@ class SavedSiteStore {
     return created
   }
 
+  async bulkAdd(
+    sites: Omit<SavedSite, "id" | "savedAt" | "openCount" | "pinned">[]
+  ): Promise<SavedSite[]> {
+    const now = Date.now()
+    const records: Omit<SavedSite, "id">[] = sites.map((site) => ({
+      ...site,
+      savedAt: now,
+      openCount: 0,
+      pinned: false,
+    }))
+    const ids = await db.savedSites.bulkAdd(records as SavedSite[], { allKeys: true })
+    const results = await db.savedSites.bulkGet(ids)
+    return results.filter((r): r is SavedSite => r !== undefined)
+  }
+
+  async bulkUpdate(patches: { id: number; patch: Partial<SavedSite> }[]): Promise<void> {
+    await db.transaction("rw", db.savedSites, async () => {
+      for (const { id, patch } of patches) {
+        await db.savedSites.update(id, patch)
+      }
+    })
+  }
+
   async getAll(): Promise<SavedSite[]> {
     return db.savedSites.toArray()
   }
