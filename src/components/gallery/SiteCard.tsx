@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { PinIcon, TagIcon, Trash2Icon } from "lucide-react"
+import { ChevronDownIcon, PinIcon, TagIcon, Trash2Icon } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -20,6 +20,7 @@ interface SiteCardProps {
   onTagsChange?: (site: SavedSite, tags: string[]) => void
   onPinToggle?: (site: SavedSite, pinned: boolean) => void
   onDelete?: (site: SavedSite) => void
+  availableTags?: string[]
   className?: string
 }
 
@@ -48,6 +49,7 @@ export function SiteCard({
   onTagsChange,
   onPinToggle,
   onDelete,
+  availableTags,
   className,
 }: SiteCardProps) {
   const thumbUrl = useBlobUrl(site.thumb)
@@ -162,15 +164,15 @@ export function SiteCard({
               >
                 <span
                   className={cn(
-                    "flex shrink-0 cursor-pointer items-center gap-1 rounded-full bg-muted px-2.5 py-1",
-                    "text-[10px] leading-none text-muted-foreground hover:bg-muted/70"
+                    "flex shrink-0 cursor-pointer items-center gap-1 px-1 py-1",
+                    "text-[10px] leading-none text-muted-foreground hover:text-foreground"
                   )}
                   aria-label="Edit tags"
                 >
-                  <TagIcon size={10} />
                   {site.tags.length > 1
                     ? `${site.tags[0]} +${site.tags.length - 1}`
                     : (site.tags[0] ?? "Uncategorized")}
+                  <ChevronDownIcon size={10} />
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -183,30 +185,32 @@ export function SiteCard({
               >
                 <DropdownMenuLabel className="text-[10px]">Tags</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {ALL_TAGS.filter((t) => t !== "Uncategorized").map((tag) => {
-                  const checked = site.tags.includes(tag)
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={tag}
-                      className="text-xs"
-                      checked={checked}
-                      onCheckedChange={(next) => {
-                        let newTags: string[]
-                        if (next) {
-                          newTags = [...site.tags.filter((t) => t !== "Uncategorized"), tag]
-                        } else {
-                          newTags = site.tags.filter((t) => t !== tag)
-                          if (newTags.length === 0) newTags = ["Uncategorized"]
-                        }
-                        onTagsChange(site, newTags)
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onPointerUp={(e) => e.stopPropagation()}
-                    >
-                      {tag}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
+                {(availableTags ?? ALL_TAGS)
+                  .filter((t) => t !== "Uncategorized")
+                  .map((tag) => {
+                    const checked = site.tags.includes(tag)
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={tag}
+                        className="text-xs"
+                        checked={checked}
+                        onCheckedChange={(next) => {
+                          let newTags: string[]
+                          if (next) {
+                            newTags = [...site.tags.filter((t) => t !== "Uncategorized"), tag]
+                          } else {
+                            newTags = site.tags.filter((t) => t !== tag)
+                            if (newTags.length === 0) newTags = ["Uncategorized"]
+                          }
+                          onTagsChange(site, newTags)
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onPointerUp={(e) => e.stopPropagation()}
+                      >
+                        {tag}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (

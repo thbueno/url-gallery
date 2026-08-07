@@ -452,7 +452,7 @@ export default function GalleryPage() {
         )}
 
         {/* Scroll container — bounded height required for virtualization */}
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto p-6">
+        <div ref={scrollRef} className="scrollbar-minimal min-h-0 flex-1 overflow-auto p-6">
           {/* Loading skeleton or empty first-render */}
           {(isLoading || cols === 0) && (
             <div
@@ -546,6 +546,7 @@ export default function GalleryPage() {
                               onTagsChange={handleTagsChange}
                               onPinToggle={handlePinToggle}
                               onDelete={handleDelete}
+                              availableTags={mergedTags.map((t) => t.name)}
                             />
                           ))}
                         </div>

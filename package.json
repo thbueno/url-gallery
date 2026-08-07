@@ -59,14 +59,7 @@
   },
   "manifest": {
     "action": {},
-    "permissions": [
-      "storage",
-      "tabs",
-      "scripting",
-      "activeTab"
-    ],
-    "optional_host_permissions": [
-      "https://*/*"
-    ]
+    "permissions": ["storage", "tabs", "scripting", "activeTab"],
+    "optional_host_permissions": ["https://*/*"]
   }
 }
