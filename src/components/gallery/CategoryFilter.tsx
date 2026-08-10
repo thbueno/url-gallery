@@ -1,6 +1,22 @@
 import { useRef, useState } from "react"
 
-import { InfoIcon, PencilIcon, PinIcon, PlusIcon, Trash2Icon } from "lucide-react"
+import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import { GripVerticalIcon, InfoIcon, PencilIcon, PinIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
 import {
   AlertDialog,
@@ -25,24 +41,194 @@ interface CategoryFilterProps {
   tags: TagCount[]
   activeTags: string[]
   pinnedTags: string[]
+  tagOrder: string[]
   totalCount: number
   onSelect: (tags: string[]) => void
   onTogglePinTag: (tag: string) => void
   onRenameTag: (oldName: string, newName: string) => Promise<void>
   onDeleteTag: (name: string) => Promise<void>
   onAddTag: (name: string) => Promise<void>
+  onReorderTags: (order: string[]) => void
+}
+
+const PINNED_ZONE_ID = "pinned-zone"
+const TAGS_ZONE_ID = "tags-zone"
+
+interface TagRowProps {
+  tag: TagCount
+  pinned: boolean
+  isActive: boolean
+  isEditing: boolean
+  editValue: string
+  busy: boolean
+  editInputRef: React.RefObject<HTMLInputElement>
+  onToggle: () => void
+  onStartEdit: () => void
+  onEditValueChange: (value: string) => void
+  onCommitEdit: () => void
+  onCancelEdit: () => void
+  onDelete: () => void
+  onTogglePin: () => void
+}
+
+function TagRow({
+  tag,
+  pinned,
+  isActive,
+  isEditing,
+  editValue,
+  busy,
+  editInputRef,
+  onToggle,
+  onStartEdit,
+  onEditValueChange,
+  onCommitEdit,
+  onCancelEdit,
+  onDelete,
+  onTogglePin,
+}: TagRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: tag.name,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn("group relative flex items-center", isDragging && "z-10 opacity-70")}
+    >
+      {isEditing ? (
+        <div className="flex min-w-0 flex-1 items-center gap-1 py-1">
+          <Input
+            ref={editInputRef}
+            value={editValue}
+            onChange={(e) => onEditValueChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onCommitEdit()
+              if (e.key === "Escape") onCancelEdit()
+            }}
+            onBlur={onCommitEdit}
+            disabled={busy}
+            className="h-6 min-w-0 flex-1 px-1.5 text-xs"
+          />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                aria-label={`Delete ${tag.name}`}
+                className="shrink-0 text-muted-foreground hover:text-destructive"
+              >
+                <Trash2Icon size={12} />
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete tag "{tag.name}"?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove the tag from all sites carrying it. This action can't be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={onDelete}
+                  disabled={busy}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      ) : (
+        <>
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            aria-label={`Reorder ${tag.name}`}
+            className="flex size-4 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity group-hover:opacity-40 hover:!opacity-100 active:cursor-grabbing"
+          >
+            <GripVerticalIcon size={11} />
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggle}
+            className={cn(
+              "flex min-w-0 flex-1 items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
+              isActive
+                ? "bg-accent font-medium text-accent-foreground"
+                : "text-sidebar-foreground hover:bg-accent/60"
+            )}
+          >
+            <span className="min-w-0 truncate pr-9">{tag.name}</span>
+          </button>
+
+          {/* Edit button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onStartEdit()
+            }}
+            aria-label={`Edit ${tag.name}`}
+            className="absolute right-7 flex size-4 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100"
+          >
+            <PencilIcon size={10} />
+          </button>
+
+          {/* Pin button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onTogglePin()
+            }}
+            aria-label={pinned ? `Unpin ${tag.name}` : `Pin ${tag.name}`}
+            className={cn(
+              "absolute right-1.5 flex size-4 items-center justify-center rounded transition-opacity",
+              pinned
+                ? "opacity-100 text-foreground"
+                : "opacity-0 group-hover:opacity-60 text-muted-foreground hover:!opacity-100"
+            )}
+          >
+            <PinIcon size={10} className={cn(pinned && "fill-foreground")} />
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
+function TagZone({ id, children }: { id: string; children: React.ReactNode }) {
+  const { setNodeRef } = useDroppable({ id })
+  return (
+    <div ref={setNodeRef} className="flex flex-col gap-1">
+      {children}
+    </div>
+  )
 }
 
 export function CategoryFilter({
   tags,
   activeTags,
   pinnedTags,
+  tagOrder,
   totalCount,
   onSelect,
   onTogglePinTag,
   onRenameTag,
   onDeleteTag,
   onAddTag,
+  onReorderTags,
 }: CategoryFilterProps) {
   const [editingTag, setEditingTag] = useState<string | null>(null)
   const [editValue, setEditValue] = useState("")
@@ -52,8 +238,27 @@ export function CategoryFilter({
   const editInputRef = useRef<HTMLInputElement>(null)
   const addInputRef = useRef<HTMLInputElement>(null)
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
   const uncategorizedCount = tags.find((c) => c.name === "Uncategorized")?.count ?? 0
   const showUncategorizedNotice = uncategorizedCount > 0 && totalCount > 0
+
+  const known = new Set(tagOrder)
+  const effectiveOrder = [...tagOrder, ...tags.map((t) => t.name).filter((n) => !known.has(n))]
+  const byName = new Map(tags.map((t) => [t.name, t]))
+
+  const pinnedTagRows = effectiveOrder
+    .filter((name) => pinnedTags.includes(name))
+    .map((name) => byName.get(name))
+    .filter((t): t is TagCount => t !== undefined)
+
+  const unpinnedTagRows = effectiveOrder
+    .filter((name) => !pinnedTags.includes(name))
+    .map((name) => byName.get(name))
+    .filter((t): t is TagCount => t !== undefined)
 
   function toggleTag(name: string) {
     onSelect(activeTags.includes(name) ? [] : [name])
@@ -108,6 +313,36 @@ export function CategoryFilter({
     setAddValue("")
   }
 
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over) return
+
+    const activeName = String(active.id)
+    const overId = String(over.id)
+    const wasPinned = pinnedTags.includes(activeName)
+
+    let targetPinned: boolean
+    if (overId === PINNED_ZONE_ID) {
+      targetPinned = true
+    } else if (overId === TAGS_ZONE_ID) {
+      targetPinned = false
+    } else {
+      targetPinned = pinnedTags.includes(overId)
+    }
+
+    const nextOrder = effectiveOrder.filter((name) => name !== activeName)
+    const overIndex = nextOrder.indexOf(overId)
+    const insertIndex = overIndex === -1 ? nextOrder.length : overIndex
+    nextOrder.splice(insertIndex, 0, activeName)
+
+    if (nextOrder.join("|") !== effectiveOrder.join("|")) {
+      onReorderTags(nextOrder)
+    }
+    if (targetPinned !== wasPinned) {
+      onTogglePinTag(activeName)
+    }
+  }
+
   return (
     <nav className="flex flex-col gap-1 px-2 pb-4">
       <div className="mb-1 flex items-center justify-between px-2">
@@ -155,106 +390,71 @@ export function CategoryFilter({
         <span>All</span>
       </button>
 
-      {tags.map((tag) => (
-        <div key={tag.name} className="group relative flex items-center">
-          {editingTag === tag.name ? (
-            <div className="flex min-w-0 flex-1 items-center gap-1 py-1">
-              <Input
-                ref={editInputRef}
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitEdit()
-                  if (e.key === "Escape") setEditingTag(null)
-                }}
-                onBlur={commitEdit}
-                disabled={busy}
-                className="h-6 min-w-0 flex-1 px-1.5 text-xs"
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        {pinnedTagRows.length > 0 && (
+          <p className="mb-1 mt-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Pinned
+          </p>
+        )}
+        <SortableContext
+          items={pinnedTagRows.map((t) => t.name)}
+          strategy={verticalListSortingStrategy}
+        >
+          <TagZone id={PINNED_ZONE_ID}>
+            {pinnedTagRows.map((tag) => (
+              <TagRow
+                key={tag.name}
+                tag={tag}
+                pinned
+                isActive={activeTags.includes(tag.name)}
+                isEditing={editingTag === tag.name}
+                editValue={editValue}
+                busy={busy}
+                editInputRef={editInputRef}
+                onToggle={() => toggleTag(tag.name)}
+                onStartEdit={() => startEdit(tag.name)}
+                onEditValueChange={setEditValue}
+                onCommitEdit={commitEdit}
+                onCancelEdit={() => setEditingTag(null)}
+                onDelete={() => handleDelete(tag.name)}
+                onTogglePin={() => onTogglePinTag(tag.name)}
               />
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    aria-label={`Delete ${tag.name}`}
-                    className="shrink-0 text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2Icon size={12} />
-                  </button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete tag "{tag.name}"?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will remove the tag from all sites carrying it. This action can't be
-                      undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleDelete(tag.name)}
-                      disabled={busy}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => toggleTag(tag.name)}
-                className={cn(
-                  "flex min-w-0 flex-1 items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
-                  activeTags.includes(tag.name)
-                    ? "bg-accent font-medium text-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-accent/60"
-                )}
-              >
-                <span className="min-w-0 truncate pr-9">{tag.name}</span>
-              </button>
+            ))}
+          </TagZone>
+        </SortableContext>
 
-              {/* Edit button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  startEdit(tag.name)
-                }}
-                aria-label={`Edit ${tag.name}`}
-                className="absolute right-7 flex size-4 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100"
-              >
-                <PencilIcon size={10} />
-              </button>
-
-              {/* Pin button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onTogglePinTag(tag.name)
-                }}
-                aria-label={pinnedTags.includes(tag.name) ? `Unpin ${tag.name}` : `Pin ${tag.name}`}
-                className={cn(
-                  "absolute right-1.5 flex size-4 items-center justify-center rounded transition-opacity",
-                  pinnedTags.includes(tag.name)
-                    ? "opacity-100 text-foreground"
-                    : "opacity-0 group-hover:opacity-60 text-muted-foreground hover:!opacity-100"
-                )}
-              >
-                <PinIcon
-                  size={10}
-                  className={cn(pinnedTags.includes(tag.name) && "fill-foreground")}
-                />
-              </button>
-            </>
-          )}
-        </div>
-      ))}
+        {pinnedTagRows.length > 0 && unpinnedTagRows.length > 0 && (
+          <p className="mb-1 mt-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Tags
+          </p>
+        )}
+        <SortableContext
+          items={unpinnedTagRows.map((t) => t.name)}
+          strategy={verticalListSortingStrategy}
+        >
+          <TagZone id={TAGS_ZONE_ID}>
+            {unpinnedTagRows.map((tag) => (
+              <TagRow
+                key={tag.name}
+                tag={tag}
+                pinned={false}
+                isActive={activeTags.includes(tag.name)}
+                isEditing={editingTag === tag.name}
+                editValue={editValue}
+                busy={busy}
+                editInputRef={editInputRef}
+                onToggle={() => toggleTag(tag.name)}
+                onStartEdit={() => startEdit(tag.name)}
+                onEditValueChange={setEditValue}
+                onCommitEdit={commitEdit}
+                onCancelEdit={() => setEditingTag(null)}
+                onDelete={() => handleDelete(tag.name)}
+                onTogglePin={() => onTogglePinTag(tag.name)}
+              />
+            ))}
+          </TagZone>
+        </SortableContext>
+      </DndContext>
 
       {showUncategorizedNotice && (
         <div className="mt-3 flex items-start gap-1.5 rounded-md bg-muted/50 px-2 py-2">

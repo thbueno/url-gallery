@@ -43,7 +43,7 @@ import { savedSiteStore } from "@/lib/store"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { useGalleryStore } from "@/store/galleryStore"
-import { useTagSettingsStore } from "@/store/tagSettingsStore"
+import { useTagSettingsStore, withEffectiveOrder } from "@/store/tagSettingsStore"
 
 // ── Column count from container width ────────────────────────────────────────
 
@@ -222,11 +222,13 @@ export default function GalleryPage() {
 
   const pinnedTags = useTagSettingsStore((s) => s.pinnedTags)
   const customTags = useTagSettingsStore((s) => s.customTags)
+  const tagOrder = useTagSettingsStore((s) => s.tagOrder)
   const hydrateTags = useTagSettingsStore((s) => s.hydrate)
   const togglePinTag = useTagSettingsStore((s) => s.togglePinTag)
   const addCustomTag = useTagSettingsStore((s) => s.addCustomTag)
   const removeCustomTag = useTagSettingsStore((s) => s.removeCustomTag)
   const renameCustomTag = useTagSettingsStore((s) => s.renameCustomTag)
+  const reorderTags = useTagSettingsStore((s) => s.reorderTags)
 
   const [showPermissionBanner, setShowPermissionBanner] = useState(false)
   const [isSeeding, setIsSeeding] = useState(false)
@@ -399,6 +401,11 @@ export default function GalleryPage() {
       .map((ct) => ({ name: ct, count: 0 })),
   ]
 
+  const effectiveTagOrder = withEffectiveOrder(
+    tagOrder,
+    mergedTags.map((t) => t.name)
+  )
+
   const totalCount = tags.reduce((n, c) => n + c.count, 0)
 
   return (
@@ -434,12 +441,14 @@ export default function GalleryPage() {
               tags={mergedTags}
               activeTags={activeTags}
               pinnedTags={pinnedTags}
+              tagOrder={effectiveTagOrder}
               totalCount={totalCount}
               onSelect={setActiveTags}
               onTogglePinTag={togglePinTag}
               onRenameTag={handleTagRename}
               onDeleteTag={handleTagDelete}
               onAddTag={handleTagAdd}
+              onReorderTags={reorderTags}
             />
           </div>
         )}
