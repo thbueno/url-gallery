@@ -237,9 +237,9 @@ export default function GalleryPage() {
   const isFirstActiveTags = useRef(true)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
-      return localStorage.getItem("sidebar-collapsed") === "true"
+      return localStorage.getItem("sidebar-collapsed") !== "false"
     } catch {
-      return false
+      return true
     }
   })
 
