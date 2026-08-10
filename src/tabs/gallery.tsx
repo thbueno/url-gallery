@@ -307,7 +307,15 @@ export default function GalleryPage() {
     if (site.id !== undefined) {
       await savedSiteStore.incrementOpenCount(site.id)
     }
-    window.open(site.url, "_blank")
+    const [existing] = await chrome.tabs.query({ url: site.url })
+    if (existing?.id !== undefined) {
+      await chrome.tabs.update(existing.id, { active: true })
+      if (existing.windowId !== undefined) {
+        await chrome.windows.update(existing.windowId, { focused: true })
+      }
+    } else {
+      window.open(site.url, "_blank")
+    }
   }
 
   async function handleTagsChange(site: SavedSite, siteTags: string[]) {

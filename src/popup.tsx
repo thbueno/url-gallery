@@ -1,6 +1,6 @@
 import "@/style.css"
 
-import { Bookmark, ShieldCheck } from "lucide-react"
+import { Bookmark, LayoutGrid, ShieldCheck } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { savedSiteStore } from "@/lib/store"
 import { GENERIC_OG_DOMAINS } from "@/lib/thumbnail-service"
 import { withTimeout } from "@/lib/utils"
+import { getYoutubeThumbnailUrls, getYoutubeVideoId } from "@/lib/youtube"
 
 const PERMISSION_ORIGINS = ["https://*/*"]
 const DECLINED_KEY = "permissionDeclined"
@@ -56,6 +57,10 @@ export default function Popup() {
       }
     })
   }, [])
+
+  function handleOpenGallery() {
+    chrome.tabs.create({ url: chrome.runtime.getURL("tabs/gallery.html") })
+  }
 
   async function handleGrantPermission() {
     const granted = await chrome.permissions.request({ origins: PERMISSION_ORIGINS })
@@ -111,6 +116,25 @@ export default function Popup() {
     }
 
     const hostname = new URL(tab.url).hostname.replace(/^www\./, "")
+
+    const youtubeVideoId = getYoutubeVideoId(tab.url)
+    if (youtubeVideoId !== undefined) {
+      imageUrl = getYoutubeThumbnailUrls(youtubeVideoId)[0]
+      // YouTube's og:title/document.title lag behind the SPA's client render
+      // at script-injection time, so extraction above often grabs the
+      // placeholder "YouTube" instead of the real video title. tab.title
+      // reflects the already-rendered tab bar title, which is reliable here.
+      if (tab.title) {
+        title = tab.title.replace(/ - YouTube$/, "")
+      }
+    }
+
+    // Tab titles (and some sites' document.title, used as an og:title
+    // fallback above) can carry a leading unread-count badge, e.g.
+    // "(3) Video Title" or "(1) Name on X: ...". That badge isn't part of
+    // the real title, so strip it before saving.
+    title = title.replace(/^\(\d+\)\s*/, "")
+
     if (GENERIC_OG_DOMAINS.includes(hostname)) {
       try {
         screenshotDataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" })
@@ -151,11 +175,22 @@ export default function Popup() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold">URL Gallery</span>
-        {permGranted && (
-          <Badge variant="secondary" className="text-xs">
-            Full thumbnails
-          </Badge>
-        )}
+        <div className="flex items-center gap-1.5">
+          {permGranted && (
+            <Badge variant="secondary" className="text-xs">
+              Full thumbnails
+            </Badge>
+          )}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-7"
+            onClick={handleOpenGallery}
+            aria-label="Open gallery"
+          >
+            <LayoutGrid size={15} />
+          </Button>
+        </div>
       </div>
 
       <Separator />

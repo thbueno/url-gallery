@@ -41,10 +41,17 @@ async function urlToBlob(url: string): Promise<Blob> {
   return canvas.convertToBlob({ type: "image/webp", quality: WEBP_QUALITY })
 }
 
-export async function fetchAndResize(imageUrl: string, faviconUrl: string): Promise<Blob> {
-  try {
-    return await urlToBlob(imageUrl)
-  } catch {
-    return await urlToBlob(faviconUrl)
+export async function fetchAndResize(
+  imageUrl: string,
+  faviconUrl: string,
+  fallbackImageUrls: string[] = []
+): Promise<Blob> {
+  for (const url of [imageUrl, ...fallbackImageUrls]) {
+    try {
+      return await urlToBlob(url)
+    } catch {
+      // try next candidate
+    }
   }
+  return urlToBlob(faviconUrl)
 }

@@ -2,6 +2,7 @@ import { categorize } from "@/lib/categorizer"
 import { parseMessage } from "@/lib/messages"
 import { savedSiteStore } from "@/lib/store"
 import { fetchAndResize } from "@/lib/thumbnail-service"
+import { getYoutubeThumbnailUrls, getYoutubeVideoId } from "@/lib/youtube"
 
 async function handleMessage(raw: unknown): Promise<{ ok: boolean; error?: string }> {
   let msg: ReturnType<typeof parseMessage>
@@ -37,9 +38,13 @@ async function handleMessage(raw: unknown): Promise<{ ok: boolean; error?: strin
         // fetch "succeeds" but produces a useless, non-representative thumbnail.
         ;(async () => {
           try {
+            const youtubeVideoId = getYoutubeVideoId(msg.url)
+            const youtubeFallbacks =
+              youtubeVideoId !== undefined ? getYoutubeThumbnailUrls(youtubeVideoId).slice(1) : []
             const thumbBlob = await fetchAndResize(
               msg.screenshotDataUrl ?? msg.imageUrl ?? msg.faviconUrl ?? "",
-              msg.faviconUrl ?? ""
+              msg.faviconUrl ?? "",
+              youtubeFallbacks
             )
             await savedSiteStore.update(id, { thumb: thumbBlob })
             new BroadcastChannel("url-gallery").postMessage({ type: "SITE_SAVED" })
