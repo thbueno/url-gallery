@@ -88,6 +88,10 @@ class SavedSiteStore {
     return db.savedSites.get(id)
   }
 
+  async getByUrl(url: string): Promise<SavedSite | undefined> {
+    return db.savedSites.where("url").equals(url).first()
+  }
+
   async update(id: number, patch: Partial<SavedSite>): Promise<void> {
     await db.savedSites.update(id, patch)
   }
