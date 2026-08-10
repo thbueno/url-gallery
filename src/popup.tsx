@@ -7,10 +7,15 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { savedSiteStore } from "@/lib/store"
 import { GENERIC_OG_DOMAINS } from "@/lib/thumbnail-service"
+import { withTimeout } from "@/lib/utils"
 
 const PERMISSION_ORIGINS = ["https://*/*"]
 const DECLINED_KEY = "permissionDeclined"
+// Best-effort "already saved" check — never worth blocking/delaying the
+// popup UI over, so it's capped and silently skipped on timeout or error.
+const ALREADY_SAVED_CHECK_TIMEOUT_MS = 2000
 
 async function getPermissionState(): Promise<{ granted: boolean; declined: boolean }> {
   const granted = await chrome.permissions.contains({ origins: PERMISSION_ORIGINS })
@@ -25,11 +30,30 @@ export default function Popup() {
     "idle" | "saving" | "saved-full" | "saved-favicon" | "error"
   >("idle")
   const [saveError, setSaveError] = useState<string | null>(null)
+  // True when saveState was initialized from an existing SavedSite found on
+  // popup open, rather than from a save just performed in this session. Keeps
+  // the post-save "page icon" hint from wrongly reappearing on reopen.
+  const [alreadySavedOnOpen, setAlreadySavedOnOpen] = useState(false)
 
   useEffect(() => {
     getPermissionState().then(({ granted, declined }) => {
       setPermGranted(granted)
       setPermDeclined(declined)
+    })
+
+    withTimeout(
+      chrome.tabs.query({ active: true, currentWindow: true }).then(async ([tab]) => {
+        if (!tab?.url || !tab.url.startsWith("http")) {
+          return undefined
+        }
+        return savedSiteStore.getByUrl(tab.url)
+      }),
+      ALREADY_SAVED_CHECK_TIMEOUT_MS
+    ).then((existing) => {
+      if (existing) {
+        setAlreadySavedOnOpen(true)
+        setSaveState("saved-favicon")
+      }
     })
   }, [])
 
@@ -107,8 +131,8 @@ export default function Popup() {
         screenshotDataUrl,
       })
       if (response?.ok) {
+        setAlreadySavedOnOpen(false)
         setSaveState(permGranted ? "saved-full" : "saved-favicon")
-        setTimeout(() => setSaveState("idle"), 2500)
       } else {
         setSaveState("error")
         setSaveError(response?.error ?? "Save failed")
@@ -148,7 +172,7 @@ export default function Popup() {
       </Button>
 
       {/* Post-save feedback — shown only after save */}
-      {saveState === "saved-favicon" && (
+      {saveState === "saved-favicon" && !alreadySavedOnOpen && (
         <p className="text-xs text-muted-foreground">
           Saved with page icon as thumbnail. For a richer preview, use the bookmark button on the
           page.
