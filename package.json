@@ -5,8 +5,8 @@
   "description": "A visual gallery of fav-clicked sites",
   "author": "thbueno",
   "scripts": {
-    "dev": "plasmo dev",
-    "build": "plasmo build",
+    "dev": "node scripts/generate-popup-html.mjs && plasmo dev",
+    "build": "node scripts/generate-popup-html.mjs && plasmo build --hoist",
     "package": "plasmo package",
     "test": "vitest run",
     "test:watch": "vitest",
