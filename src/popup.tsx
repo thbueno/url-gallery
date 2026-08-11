@@ -1,13 +1,12 @@
 import "@/style.css"
 
 import { Bookmark, LayoutGrid, ShieldCheck } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { savedSiteStore } from "@/lib/store"
 import { GENERIC_OG_DOMAINS } from "@/lib/thumbnail-service"
 import { withTimeout } from "@/lib/utils"
 import { getYoutubeThumbnailUrls, getYoutubeVideoId } from "@/lib/youtube"
@@ -36,6 +35,13 @@ export default function Popup() {
   // the post-save "page icon" hint from wrongly reappearing on reopen.
   const [alreadySavedOnOpen, setAlreadySavedOnOpen] = useState(false)
 
+  // Removes the static popup.html skeleton (see scripts/generate-popup-html.mjs)
+  // in the same commit as the real popup's first paint, so the swap doesn't
+  // cause a visible double-paint flash.
+  useLayoutEffect(() => {
+    document.getElementById("__plasmo_skeleton")?.remove()
+  }, [])
+
   useEffect(() => {
     getPermissionState().then(({ granted, declined }) => {
       setPermGranted(granted)
@@ -47,6 +53,7 @@ export default function Popup() {
         if (!tab?.url || !tab.url.startsWith("http")) {
           return undefined
         }
+        const { savedSiteStore } = await import("@/lib/store")
         return savedSiteStore.getByUrl(tab.url)
       }),
       ALREADY_SAVED_CHECK_TIMEOUT_MS
