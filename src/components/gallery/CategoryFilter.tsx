@@ -90,6 +90,7 @@ function TagRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: tag.name,
   })
+  const editRowRef = useRef<HTMLDivElement>(null)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -103,7 +104,7 @@ function TagRow({
       className={cn("group relative flex items-center", isDragging && "z-10 opacity-70")}
     >
       {isEditing ? (
-        <div className="flex min-w-0 flex-1 items-center gap-1 py-1">
+        <div ref={editRowRef} className="flex min-w-0 flex-1 items-center gap-1 py-1">
           <Input
             ref={editInputRef}
             value={editValue}
@@ -112,7 +113,12 @@ function TagRow({
               if (e.key === "Enter") onCommitEdit()
               if (e.key === "Escape") onCancelEdit()
             }}
-            onBlur={onCommitEdit}
+            onBlur={(e) => {
+              // Blurring to the delete trigger (or its dialog) must not collapse
+              // edit mode first — that unmounts the trigger before its click lands.
+              if (editRowRef.current?.contains(e.relatedTarget as Node)) return
+              onCommitEdit()
+            }}
             disabled={busy}
             className="h-6 min-w-0 flex-1 px-1.5 text-xs"
           />
@@ -120,7 +126,6 @@ function TagRow({
             <AlertDialogTrigger asChild>
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
                 aria-label={`Delete ${tag.name}`}
                 className="shrink-0 text-muted-foreground hover:text-destructive"
               >
