@@ -302,7 +302,7 @@ export default function DesignSystem() {
       </aside>
 
       {/* Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="scrollbar-minimal flex-1 overflow-auto">
         <div className="mx-auto max-w-4xl space-y-16 px-10 py-10">
           {/* Page header */}
           <div className="space-y-2">
