@@ -12,7 +12,6 @@ export type SortOrder = "savedAt" | "openCount"
 interface GalleryStore {
   sites: SavedSite[]
   tags: TagCount[]
-  resurfaceSites: SavedSite[]
   searchQuery: string
   activeTags: string[]
   sortOrder: SortOrder
@@ -27,9 +26,6 @@ interface GalleryStore {
   renameTag: (oldName: string, newName: string) => Promise<void>
   deleteTag: (name: string) => Promise<void>
 }
-
-const RESURFACE_DAYS = 7
-const RESURFACE_MAX = 6
 
 function sortSites(sites: SavedSite[], order: SortOrder): SavedSite[] {
   return [...sites].sort((a, b) => {
@@ -69,19 +65,9 @@ async function queryTags(): Promise<TagCount[]> {
     .sort((a, b) => b.count - a.count)
 }
 
-async function queryResurface(): Promise<SavedSite[]> {
-  const cutoff = Date.now() - RESURFACE_DAYS * 24 * 60 * 60 * 1000
-  const all = await savedSiteStore.getAll()
-  return all
-    .filter((s) => s.openCount === 0 && s.savedAt < cutoff)
-    .sort((a, b) => a.savedAt - b.savedAt)
-    .slice(0, RESURFACE_MAX)
-}
-
 export const useGalleryStore = create<GalleryStore>((set, get) => ({
   sites: [],
   tags: [],
-  resurfaceSites: [],
   searchQuery: "",
   activeTags: [],
   sortOrder: "savedAt",
@@ -89,12 +75,11 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
 
   async load() {
     set({ isLoading: true })
-    const [sites, tags, resurfaceSites] = await Promise.all([
+    const [sites, tags] = await Promise.all([
       querySites(get().searchQuery, get().activeTags, get().sortOrder),
       queryTags(),
-      queryResurface(),
     ])
-    set({ sites, tags, resurfaceSites, isLoading: false })
+    set({ sites, tags, isLoading: false })
   },
 
   async setSearchQuery(query) {
@@ -126,21 +111,17 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
 
   async togglePin(id, pinned) {
     await savedSiteStore.setPinned(id, pinned)
-    const [sites, resurfaceSites] = await Promise.all([
-      querySites(get().searchQuery, get().activeTags, get().sortOrder),
-      queryResurface(),
-    ])
-    set({ sites, resurfaceSites })
+    const sites = await querySites(get().searchQuery, get().activeTags, get().sortOrder)
+    set({ sites })
   },
 
   async deleteSite(id) {
     await savedSiteStore.delete(id)
-    const [sites, tags, resurfaceSites] = await Promise.all([
+    const [sites, tags] = await Promise.all([
       querySites(get().searchQuery, get().activeTags, get().sortOrder),
       queryTags(),
-      queryResurface(),
     ])
-    set({ sites, tags, resurfaceSites })
+    set({ sites, tags })
   },
 
   async renameTag(oldName, newName) {
@@ -156,11 +137,10 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
   async deleteTag(name) {
     await savedSiteStore.deleteTag(name)
     const activeTags = get().activeTags.filter((t) => t !== name)
-    const [sites, tags, resurfaceSites] = await Promise.all([
+    const [sites, tags] = await Promise.all([
       querySites(get().searchQuery, activeTags, get().sortOrder),
       queryTags(),
-      queryResurface(),
     ])
-    set({ sites, tags, activeTags, resurfaceSites })
+    set({ sites, tags, activeTags })
   },
 }))

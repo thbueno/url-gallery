@@ -155,6 +155,10 @@ PermissionGate, Grid, Search, and CategoryFilter: verify manually in v1.
 - **ADR 0006** — Zod message contracts
 - **ADR 0007** — single-source design tokens (`src/style.css`) + dev-only design-system page + component modularity
 
+## Dev tooling
+
+`react-grab` wired into `src/tabs/gallery.tsx`, gated on `process.env.NODE_ENV === "development"`. Pull skill at `.claude/skills/react-grab/`.
+
 ## Agent skills
 
 ### Issue tracker

@@ -1,10 +1,13 @@
 import "@/style.css"
 
+if (process.env.NODE_ENV === "development") {
+  import("react-grab")
+}
+
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   BookmarkIcon,
-  ClockIcon,
   ImageIcon,
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
@@ -64,51 +67,6 @@ function useColumnCount(containerRef: React.RefObject<HTMLDivElement | null>): n
     return () => observer.disconnect()
   }, [containerRef])
   return cols
-}
-
-// ── Revisit strip ─────────────────────────────────────────────────────────────
-
-function RevisitStrip({
-  sites,
-  onOpen,
-}: {
-  sites: SavedSite[]
-  onOpen: (site: SavedSite) => void
-}) {
-  const [collapsed, setCollapsed] = useState(false)
-  if (sites.length === 0) return null
-  return (
-    <div className="mb-4 shrink-0">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <ClockIcon size={12} className="text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground">Revisit</span>
-          <span className="tabular-nums text-[10px] text-muted-foreground/60">
-            — saved but never opened
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => setCollapsed((v) => !v)}
-          className="text-[10px] text-muted-foreground/60 underline-offset-2 hover:underline"
-        >
-          {collapsed ? "show" : "hide"}
-        </button>
-      </div>
-      {!collapsed && (
-        <div className="flex gap-4 overflow-x-auto pb-1">
-          {sites.map((site) => (
-            <SiteCard
-              key={site.id ?? site.url}
-              site={site}
-              onClick={onOpen}
-              className="w-44 shrink-0"
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  )
 }
 
 // ── Permission-declined banner ────────────────────────────────────────────────
@@ -171,12 +129,8 @@ const SEED_DOMAINS = [
 ]
 
 const SEED_TOTAL = 20
-const SEED_BACKDATED = 5
 
 async function seedDatabase(): Promise<void> {
-  const now = Date.now()
-  const DAY = 24 * 60 * 60 * 1000
-
   const sites = Array.from({ length: SEED_TOTAL }, (_, i) => {
     const domain = SEED_DOMAINS[i % SEED_DOMAINS.length] ?? "example.com"
     const tag = ALL_TAGS[i % ALL_TAGS.length] ?? "Uncategorized"
@@ -189,17 +143,7 @@ async function seedDatabase(): Promise<void> {
     }
   })
 
-  const created = await savedSiteStore.bulkAdd(sites)
-
-  // Backdate the first SEED_BACKDATED records to 8 days ago — exercises the
-  // Revisit strip; the remaining SEED_TOTAL - SEED_BACKDATED stay fresh so the
-  // normal grid also has data to render.
-  const toBackdate = created.slice(0, SEED_BACKDATED)
-  await savedSiteStore.bulkUpdate(
-    toBackdate
-      .filter((site): site is SavedSite & { id: number } => site.id !== undefined)
-      .map((site) => ({ id: site.id, patch: { savedAt: now - 8 * DAY } }))
-  )
+  await savedSiteStore.bulkAdd(sites)
 }
 
 // ── Gallery page ─────────────────────────────────────────────────────────────
@@ -207,7 +151,6 @@ async function seedDatabase(): Promise<void> {
 export default function GalleryPage() {
   const sites = useGalleryStore((s) => s.sites)
   const tags = useGalleryStore((s) => s.tags)
-  const resurfaceSites = useGalleryStore((s) => s.resurfaceSites)
   const activeTags = useGalleryStore((s) => s.activeTags)
   const isLoading = useGalleryStore((s) => s.isLoading)
   const searchQuery = useGalleryStore((s) => s.searchQuery)
@@ -444,7 +387,7 @@ export default function GalleryPage() {
         </div>
 
         {!sidebarCollapsed && (
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="scrollbar-minimal flex min-h-0 flex-1 flex-col overflow-y-auto">
             <CategoryFilter
               tags={mergedTags}
               activeTags={activeTags}
@@ -482,9 +425,7 @@ export default function GalleryPage() {
                     through a hardcoded domain list (github.com, stackoverflow.com, youtube.com,
                     twitter.com, reddit.com, figma.com, docs.google.com, npmjs.com, medium.com,
                     vercel.com). It is not real bookmarks or externally-fetched data — purely local
-                    synthetic data for exercising the gallery UI. {SEED_BACKDATED} of the{" "}
-                    {SEED_TOTAL} records will be backdated to 8 days ago to exercise the Revisit
-                    strip; the rest stay fresh.
+                    synthetic data for exercising the gallery UI.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -685,11 +626,6 @@ export default function GalleryPage() {
             </div>
           )}
 
-          {/* Revisit strip — sites saved 7+ days ago, never opened */}
-          {!isLoading && cols > 0 && (
-            <RevisitStrip sites={resurfaceSites} onOpen={handleCardClick} />
-          )}
-
           {/* Empty state */}
           {!isLoading && cols > 0 && sites.length === 0 && (
             <div className="flex h-48 flex-col items-center justify-center gap-2 text-center">
@@ -765,7 +701,7 @@ export default function GalleryPage() {
                               onTagsChange={handleTagsChange}
                               onPinToggle={handlePinToggle}
                               onDelete={handleDelete}
-                              availableTags={mergedTags.map((t) => t.name)}
+                              availableTags={effectiveTagOrder}
                               selectMode={selectMode}
                               selected={site.id !== undefined && selectedIds.has(site.id)}
                               onToggleSelect={handleToggleSelect}
