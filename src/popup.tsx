@@ -1,4 +1,5 @@
 import "@/style.css"
+import "@/store/themeStore"
 
 import { Bookmark, LayoutGrid, ShieldCheck } from "lucide-react"
 import { useEffect, useLayoutEffect, useState } from "react"

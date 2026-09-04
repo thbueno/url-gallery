@@ -57,6 +57,20 @@ async function handleMessage(raw: unknown): Promise<{ ok: boolean; error?: strin
       return { ok: true }
     }
 
+    case "REFRESH_THUMBNAIL": {
+      // Import backfill: the imported record has no thumbnail. Fetch + resize the
+      // stored favicon into a real thumb. Same fetch/resize path as SAVE_REQUEST,
+      // still synchronous-per-message — no queue, no timers (ADR 0001).
+      try {
+        const thumbBlob = await fetchAndResize(msg.faviconUrl, msg.faviconUrl, [])
+        await savedSiteStore.update(msg.id, { thumb: thumbBlob })
+        new BroadcastChannel("url-gallery").postMessage({ type: "SITE_SAVED" })
+        return { ok: true }
+      } catch (err) {
+        return { ok: false, error: String(err) }
+      }
+    }
+
     default: {
       return { ok: false, error: "Unknown message type" }
     }

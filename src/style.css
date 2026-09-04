@@ -37,36 +37,68 @@
 
 @layer base {
   :root {
-    /* ── Color palette — Zinc base ────────────────────────────────── */
+    /* ── Color palette — theme (hsl) ─────────────────────────────────── */
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --foreground: 153.3333 17.6471% 10%;
+    --card: 120 6.6667% 97.0588%;
+    --card-foreground: 153.3333 17.6471% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --popover-foreground: 153.3333 17.6471% 10%;
+    --primary: 143.6735 61.5063% 53.1373%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 153.3333 17.6471% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 180 1.9608% 90%;
+    --muted-foreground: 153.3333 17.6471% 10%;
+    --accent: 152.3077 35.1351% 92.7451%;
+    --accent-foreground: 143.6735 61.5063% 53.1373%;
+    --destructive: 296.3265 63.0901% 54.3137%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 144.0 21.7391% 90.9804%;
+    --input: 140 23.0769% 97.4510%;
+    --ring: 142.953 62.3431% 53.1373%;
 
     /* ── Gallery surface tokens ───────────────────────────────────── */
-    /* Sidebar background — slightly off main background */
-    --sidebar: 240 4.8% 97%;
-    --sidebar-foreground: 240 5.9% 10%;
-    --sidebar-border: 240 5.9% 90%;
+    --sidebar: 120 6.6667% 97.0588%;
+    --sidebar-foreground: 153.3333 17.6471% 10%;
+    --sidebar-primary: 143.6735 61.5063% 53.1373%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 152.3077 35.1351% 92.7451%;
+    --sidebar-accent-foreground: 143.6735 61.5063% 53.1373%;
+    --sidebar-border: 142.5 16.6667% 90.5882%;
+    --sidebar-ring: 142.953 62.3431% 53.1373%;
     /* Thumbnail overlay gradient (bottom-up scrim for card readability) */
-    --thumb-scrim: linear-gradient(to top, hsl(240 10% 3.9% / 0.7) 0%, transparent 60%);
+    --thumb-scrim: linear-gradient(to top, hsl(153.3333 17.6471% 10% / 0.7) 0%, transparent 60%);
     /* Card hover elevation ring */
-    --card-hover-ring: 240 5.9% 80%;
+    --card-hover-ring: 144 21.7391% 80%;
+
+    /* ── Chart colors ─────────────────────────────────────────────── */
+    --chart-1: 143.6735 61.5063% 53.1373%;
+    --chart-2: 99.8438 69.5652% 36.0784%;
+    --chart-3: 342.2069 65.0224% 56.2745%;
+    --chart-4: 86.9492 55.1402% 41.9608%;
+    --chart-5: 281.3636 52.8000% 50.9804%;
+
+    /* ── Shadow system ────────────────────────────────────────────── */
+    --shadow-x: 0px;
+    --shadow-y: 2px;
+    --shadow-blur: 0px;
+    --shadow-spread: 0px;
+    --shadow-opacity: 0;
+    --shadow-color: #3dd276;
+    --shadow-2xs: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0);
+    --shadow-xs: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0);
+    --shadow-sm: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0), 0px 1px 2px -1px
+      hsl(142.953 62.3431% 53.1373% / 0);
+    --shadow: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0), 0px 1px 2px -1px
+      hsl(142.953 62.3431% 53.1373% / 0);
+    --shadow-md: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0), 0px 2px 4px -1px
+      hsl(142.953 62.3431% 53.1373% / 0);
+    --shadow-lg: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0), 0px 4px 6px -1px
+      hsl(142.953 62.3431% 53.1373% / 0);
+    --shadow-xl: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0), 0px 8px 10px -1px
+      hsl(142.953 62.3431% 53.1373% / 0);
+    --shadow-2xl: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0);
 
     /* ── Font family ──────────────────────────────────────────────── */
     /* Prioritise Apple/Windows premium system faces before generic fallbacks */
@@ -86,8 +118,12 @@
     --text-2xl: 1.5rem; /* 24px */
     --text-3xl: 1.875rem; /* 30px */
 
+    /* ── Letter spacing ───────────────────────────────────────────── */
+    --tracking-normal: 0em;
+    --spacing: 0.25rem;
+
     /* ── Border radius ────────────────────────────────────────────── */
-    --radius: 0.75rem;
+    --radius: 1.3rem;
     --radius-sm: 0.25rem;
     --radius-lg: 1rem;
     --radius-xl: 1.25rem;
@@ -101,33 +137,126 @@
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --background: 240 10% 3.9%;
-      --foreground: 0 0% 98%;
-      --card: 240 10% 5.5%;
-      --card-foreground: 0 0% 98%;
-      --popover: 240 10% 5.5%;
-      --popover-foreground: 0 0% 98%;
-      --primary: 0 0% 98%;
-      --primary-foreground: 240 5.9% 10%;
-      --secondary: 240 3.7% 15.9%;
-      --secondary-foreground: 0 0% 98%;
-      --muted: 240 3.7% 15.9%;
-      --muted-foreground: 240 5% 64.9%;
-      --accent: 240 3.7% 15.9%;
-      --accent-foreground: 0 0% 98%;
-      --destructive: 0 62.8% 30.6%;
-      --destructive-foreground: 0 0% 98%;
-      --border: 240 3.7% 15.9%;
-      --input: 240 3.7% 15.9%;
-      --ring: 240 4.9% 83.9%;
+      --background: 0 0% 0%;
+      --foreground: 140 6.6667% 91.1765%;
+      --card: 180 6.6667% 5.8824%;
+      --card-foreground: 0 0% 85.0980%;
+      --popover: 0 0% 0%;
+      --popover-foreground: 140 6.6667% 91.1765%;
+      --primary: 143.9264 71.1790% 44.9020%;
+      --primary-foreground: 0 0% 100%;
+      --secondary: 120 7.6923% 94.9020%;
+      --secondary-foreground: 153.3333 17.6471% 10%;
+      --muted: 0 0% 9.4118%;
+      --muted-foreground: 150.0 2.5424% 46.2745%;
+      --accent: 146.4 49.0196% 10%;
+      --accent-foreground: 143.9264 71.1790% 44.9020%;
+      --destructive: 296.3265 63.0901% 54.3137%;
+      --destructive-foreground: 0 0% 100%;
+      --border: 120 2.2222% 8.8235%;
+      --input: 147.6923 18.3099% 13.9216%;
+      --ring: 142.953 62.3431% 53.1373%;
 
-      /* Gallery surfaces — dark overrides */
-      --sidebar: 240 10% 5%;
-      --sidebar-foreground: 0 0% 90%;
-      --sidebar-border: 240 3.7% 12%;
-      --thumb-scrim: linear-gradient(to top, hsl(240 10% 3.9% / 0.85) 0%, transparent 55%);
-      --card-hover-ring: 240 3.7% 25%;
+      --sidebar: 180 5.8824% 10%;
+      --sidebar-foreground: 0 0% 85.0980%;
+      --sidebar-primary: 142.953 62.3431% 53.1373%;
+      --sidebar-primary-foreground: 0 0% 100%;
+      --sidebar-accent: 146.4 49.0196% 10%;
+      --sidebar-accent-foreground: 143.9189 61.1570% 52.5490%;
+      --sidebar-border: 144.0 11.2782% 26.0784%;
+      --sidebar-ring: 142.953 62.3431% 53.1373%;
+      --thumb-scrim: linear-gradient(to top, hsl(0 0% 0% / 0.85) 0%, transparent 55%);
+      --card-hover-ring: 144 11.2782% 40%;
+
+      --chart-1: 143.6735 61.5063% 53.1373%;
+      --chart-2: 99.8438 69.5652% 36.0784%;
+      --chart-3: 342.2069 65.0224% 56.2745%;
+      --chart-4: 86.9492 55.1402% 41.9608%;
+      --chart-5: 281.3636 52.8000% 50.9804%;
     }
+  }
+
+  /* Explicit toggle overrides — win over the OS-driven @media block above,
+     and over popup.html's inline critical-CSS `:root` duplicate (see
+     scripts/generate-popup-html.mjs), because `html.dark` (element+class) is
+     always more specific than a bare `:root`, regardless of source order.
+     Class is set on <html> by src/store/themeStore.ts. */
+  html.dark {
+    --background: 0 0% 0%;
+    --foreground: 140 6.6667% 91.1765%;
+    --card: 180 6.6667% 5.8824%;
+    --card-foreground: 0 0% 85.0980%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 140 6.6667% 91.1765%;
+    --primary: 143.9264 71.1790% 44.9020%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 120 7.6923% 94.9020%;
+    --secondary-foreground: 153.3333 17.6471% 10%;
+    --muted: 0 0% 9.4118%;
+    --muted-foreground: 150.0 2.5424% 46.2745%;
+    --accent: 146.4 49.0196% 10%;
+    --accent-foreground: 143.9264 71.1790% 44.9020%;
+    --destructive: 296.3265 63.0901% 54.3137%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 120 2.2222% 8.8235%;
+    --input: 147.6923 18.3099% 13.9216%;
+    --ring: 142.953 62.3431% 53.1373%;
+
+    --sidebar: 180 5.8824% 10%;
+    --sidebar-foreground: 0 0% 85.0980%;
+    --sidebar-primary: 142.953 62.3431% 53.1373%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 146.4 49.0196% 10%;
+    --sidebar-accent-foreground: 143.9189 61.1570% 52.5490%;
+    --sidebar-border: 144.0 11.2782% 26.0784%;
+    --sidebar-ring: 142.953 62.3431% 53.1373%;
+    --thumb-scrim: linear-gradient(to top, hsl(0 0% 0% / 0.85) 0%, transparent 55%);
+    --card-hover-ring: 144 11.2782% 40%;
+
+    --chart-1: 143.6735 61.5063% 53.1373%;
+    --chart-2: 99.8438 69.5652% 36.0784%;
+    --chart-3: 342.2069 65.0224% 56.2745%;
+    --chart-4: 86.9492 55.1402% 41.9608%;
+    --chart-5: 281.3636 52.8000% 50.9804%;
+  }
+
+  html.light {
+    --background: 0 0% 100%;
+    --foreground: 153.3333 17.6471% 10%;
+    --card: 120 6.6667% 97.0588%;
+    --card-foreground: 153.3333 17.6471% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 153.3333 17.6471% 10%;
+    --primary: 143.6735 61.5063% 53.1373%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 153.3333 17.6471% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 180 1.9608% 90%;
+    --muted-foreground: 153.3333 17.6471% 10%;
+    --accent: 152.3077 35.1351% 92.7451%;
+    --accent-foreground: 143.6735 61.5063% 53.1373%;
+    --destructive: 296.3265 63.0901% 54.3137%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 144.0 21.7391% 90.9804%;
+    --input: 140 23.0769% 97.4510%;
+    --ring: 142.953 62.3431% 53.1373%;
+
+    --sidebar: 120 6.6667% 97.0588%;
+    --sidebar-foreground: 153.3333 17.6471% 10%;
+    --sidebar-primary: 143.6735 61.5063% 53.1373%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 152.3077 35.1351% 92.7451%;
+    --sidebar-accent-foreground: 143.6735 61.5063% 53.1373%;
+    --sidebar-border: 142.5 16.6667% 90.5882%;
+    --sidebar-ring: 142.953 62.3431% 53.1373%;
+    --thumb-scrim: linear-gradient(to top, hsl(153.3333 17.6471% 10% / 0.7) 0%, transparent 60%);
+    --card-hover-ring: 144 21.7391% 80%;
+
+    --chart-1: 143.6735 61.5063% 53.1373%;
+    --chart-2: 99.8438 69.5652% 36.0784%;
+    --chart-3: 342.2069 65.0224% 56.2745%;
+    --chart-4: 86.9492 55.1402% 41.9608%;
+    --chart-5: 281.3636 52.8000% 50.9804%;
   }
 
   * {
@@ -138,6 +267,7 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: var(--font-sans);
+    letter-spacing: var(--tracking-normal);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
