@@ -64,7 +64,7 @@ Use the `/shadcn` skill to install shadcn/ui primitives into `src/components/ui/
 - Style: **New York**
 - Base color: **Zinc**
 - Border radius: **0.5rem**
-- Dark mode: `darkMode: 'media'` (follows OS preference; no manual toggle in v1)
+- Dark mode: OS preference by default (`@media (prefers-color-scheme: dark)` in `src/style.css`), overridable by the sidebar toggle (`src/components/gallery/ThemeToggle.tsx`), which sets `html.dark`/`html.light` and persists the choice via `src/store/themeStore.ts` (localStorage, shared across all extension pages since they're same-origin)
 
 ### Design tokens — single source of truth (ADR 0007)
 
