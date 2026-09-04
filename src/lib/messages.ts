@@ -16,16 +16,24 @@ export const SiteSavedSchema = z.object({
   type: z.literal("SITE_SAVED"),
 })
 
+export const RefreshThumbnailSchema = z.object({
+  type: z.literal("REFRESH_THUMBNAIL"),
+  id: z.number(),
+  faviconUrl: z.string(),
+})
+
 // ── TypeScript types (inferred from schemas) ───────────────────────────────────
 
 export type SaveRequest = z.infer<typeof SaveRequestSchema>
 export type SiteSaved = z.infer<typeof SiteSavedSchema>
+export type RefreshThumbnail = z.infer<typeof RefreshThumbnailSchema>
 
 // ── Union ──────────────────────────────────────────────────────────────────────
 
 export const MessageSchema = z.discriminatedUnion("type", [
   SaveRequestSchema,
   SiteSavedSchema,
+  RefreshThumbnailSchema,
   // Add future messages here
 ])
 

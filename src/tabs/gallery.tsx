@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from "react"
 
 import { CategoryFilter } from "@/components/gallery/CategoryFilter"
 import { SiteCard } from "@/components/gallery/SiteCard"
+import { ThemeToggle } from "@/components/gallery/ThemeToggle"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { type BackupSite, exportBackup, parseBackup, toAIDigest } from "@/lib/backup"
 import { ALL_TAGS } from "@/lib/categorizer"
 import { parseMessage } from "@/lib/messages"
 import { savedSiteStore } from "@/lib/store"
@@ -146,6 +148,71 @@ async function seedDatabase(): Promise<void> {
   await savedSiteStore.bulkAdd(sites)
 }
 
+// ── Backup / AI-context ───────────────────────────────────────────────────────
+
+function toBackupSite(site: SavedSite): BackupSite {
+  return {
+    url: site.url,
+    title: site.title,
+    favicon: site.favicon,
+    tags: site.tags,
+    savedAt: site.savedAt,
+    openCount: site.openCount,
+    pinned: site.pinned,
+  }
+}
+
+function downloadText(filename: string, text: string, mime: string): void {
+  const url = URL.createObjectURL(new Blob([text], { type: mime }))
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+async function exportGallery(): Promise<void> {
+  const sites = await savedSiteStore.getAll()
+  const today = new Date().toISOString().slice(0, 10)
+  downloadText(
+    `url-gallery-backup-${today}.json`,
+    exportBackup(sites.map(toBackupSite)),
+    "application/json"
+  )
+}
+
+async function copyGalleryForAI(): Promise<void> {
+  const sites = await savedSiteStore.getAll()
+  await navigator.clipboard.writeText(toAIDigest(sites.map(toBackupSite)))
+}
+
+// Imports a backup file, merges new URLs, then asks the service worker to
+// backfill a thumbnail from each new site's favicon — one at a time, so the
+// import doesn't fire dozens of parallel fetches. Returns the added count.
+async function importGallery(file: File): Promise<number> {
+  const parsed = parseBackup(await file.text())
+  const added = await savedSiteStore.bulkAddNew(
+    parsed.map((s) => ({
+      url: s.url,
+      title: s.title,
+      favicon: s.favicon,
+      thumb: null,
+      tags: s.tags,
+    }))
+  )
+
+  for (const site of added) {
+    if (site.id === undefined || site.favicon === null) continue
+    await chrome.runtime.sendMessage({
+      type: "REFRESH_THUMBNAIL",
+      id: site.id,
+      faviconUrl: site.favicon,
+    })
+  }
+
+  return added.length
+}
+
 // ── Gallery page ─────────────────────────────────────────────────────────────
 
 export default function GalleryPage() {
@@ -175,6 +242,8 @@ export default function GalleryPage() {
 
   const [showPermissionBanner, setShowPermissionBanner] = useState(false)
   const [isSeeding, setIsSeeding] = useState(false)
+  const [backupStatus, setBackupStatus] = useState<string | null>(null)
+  const importInputRef = useRef<HTMLInputElement>(null)
   const [filterVersion, setFilterVersion] = useState(0)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
@@ -344,6 +413,36 @@ export default function GalleryPage() {
     await addCustomTag(name)
   }
 
+  function flashStatus(msg: string) {
+    setBackupStatus(msg)
+    setTimeout(() => setBackupStatus(null), 4000)
+  }
+
+  async function handleExport() {
+    await exportGallery()
+    flashStatus("Backup downloaded")
+  }
+
+  async function handleCopyForAI() {
+    await copyGalleryForAI()
+    flashStatus("Copied for AI")
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    try {
+      const count = await importGallery(file)
+      await load()
+      flashStatus(
+        count === 0 ? "Nothing new to import" : `Imported ${count} site${count === 1 ? "" : "s"}`
+      )
+    } catch {
+      flashStatus("Import failed — not a valid backup file")
+    }
+  }
+
   // Merge site-derived tags with custom tags (count 0 for unassigned custom tags)
   const mergedTags = [
     ...tags,
@@ -364,7 +463,7 @@ export default function GalleryPage() {
       {/* ── Sidebar ── */}
       <aside
         className={cn(
-          "flex shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar",
+          "m-2 flex shrink-0 flex-col overflow-hidden rounded-card bg-card",
           "transition-[width] duration-200",
           sidebarCollapsed ? "w-10" : "w-60"
         )}
@@ -404,45 +503,79 @@ export default function GalleryPage() {
           </div>
         )}
 
-        {!sidebarCollapsed && process.env.NODE_ENV === "development" && (
-          <div className="mt-auto shrink-0 border-t border-sidebar-border p-2">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={isSeeding}
-                  className="h-7 w-full justify-start px-2 text-[11px] text-muted-foreground"
-                >
-                  {isSeeding ? "Seeding…" : "Seed DB"}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Seed the database with test data?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This inserts {SEED_TOTAL} synthetic test site records with fake URLs cycling
-                    through a hardcoded domain list (github.com, stackoverflow.com, youtube.com,
-                    twitter.com, reddit.com, figma.com, docs.google.com, npmjs.com, medium.com,
-                    vercel.com). It is not real bookmarks or externally-fetched data — purely local
-                    synthetic data for exercising the gallery UI.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={async () => {
-                      setIsSeeding(true)
-                      await seedDatabase()
-                      await load()
-                      setIsSeeding(false)
-                    }}
+        {!sidebarCollapsed && (
+          <div className="mt-auto flex shrink-0 flex-col gap-1 p-2">
+            {backupStatus && (
+              <p className="px-2 text-[11px] text-muted-foreground">{backupStatus}</p>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handleImportFile}
+                className="hidden"
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 flex-1 justify-start px-2 text-[11px] text-muted-foreground"
                   >
-                    Seed database
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    Data
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-44">
+                  <DropdownMenuItem onSelect={handleExport}>Export backup</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => importInputRef.current?.click()}>
+                    Import backup
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={handleCopyForAI}>Copy for AI</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {process.env.NODE_ENV === "development" ? (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={isSeeding}
+                      className="h-7 flex-1 justify-start px-2 text-[11px] text-muted-foreground"
+                    >
+                      {isSeeding ? "Seeding…" : "Seed DB"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Seed the database with test data?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This inserts {SEED_TOTAL} synthetic test site records with fake URLs cycling
+                        through a hardcoded domain list (github.com, stackoverflow.com, youtube.com,
+                        twitter.com, reddit.com, figma.com, docs.google.com, npmjs.com, medium.com,
+                        vercel.com). It is not real bookmarks or externally-fetched data — purely
+                        local synthetic data for exercising the gallery UI.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={async () => {
+                          setIsSeeding(true)
+                          await seedDatabase()
+                          await load()
+                          setIsSeeding(false)
+                        }}
+                      >
+                        Seed database
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              ) : null}
+              <ThemeToggle className="ml-auto" />
+            </div>
           </div>
         )}
       </aside>

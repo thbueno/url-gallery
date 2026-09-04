@@ -72,6 +72,17 @@ class SavedSiteStore {
     return results.filter((r): r is SavedSite => r !== undefined)
   }
 
+  async bulkAddNew(
+    sites: Omit<SavedSite, "id" | "savedAt" | "openCount" | "pinned">[]
+  ): Promise<SavedSite[]> {
+    const existing = new Set((await db.savedSites.toArray()).map((s) => s.url))
+    const fresh = sites.filter((s) => !existing.has(s.url))
+    if (fresh.length === 0) {
+      return []
+    }
+    return this.bulkAdd(fresh)
+  }
+
   async bulkUpdate(patches: { id: number; patch: Partial<SavedSite> }[]): Promise<void> {
     await db.transaction("rw", db.savedSites, async () => {
       for (const { id, patch } of patches) {

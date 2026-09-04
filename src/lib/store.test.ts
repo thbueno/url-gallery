@@ -242,6 +242,46 @@ describe("SavedSiteStore", () => {
   })
 
   // -------------------------------------------------------------------------
+  // bulkAddNew — merge on import, skip URLs already present
+  // -------------------------------------------------------------------------
+  it("bulkAddNew() adds every site when the table is empty", async () => {
+    const added = await savedSiteStore.bulkAddNew([
+      { url: "https://one.com", title: "One", favicon: null, thumb: null, tags: ["A"] },
+      { url: "https://two.com", title: "Two", favicon: null, thumb: null, tags: ["B"] },
+    ])
+
+    expect(added.length).toBe(2)
+    expect((await savedSiteStore.getAll()).length).toBe(2)
+  })
+
+  it("bulkAddNew() skips sites whose url already exists and returns only the added ones", async () => {
+    await savedSiteStore.add({
+      url: "https://dupe.com",
+      title: "Existing",
+      favicon: null,
+      thumb: null,
+      tags: ["Kept"],
+    })
+
+    const added = await savedSiteStore.bulkAddNew([
+      {
+        url: "https://dupe.com",
+        title: "Imported Dupe",
+        favicon: null,
+        thumb: null,
+        tags: ["New"],
+      },
+      { url: "https://fresh.com", title: "Fresh", favicon: null, thumb: null, tags: ["New"] },
+    ])
+
+    expect(added.map((s) => s.url)).toEqual(["https://fresh.com"])
+
+    const existing = await savedSiteStore.getByUrl("https://dupe.com")
+    expect(existing?.title).toBe("Existing")
+    expect(existing?.tags).toEqual(["Kept"])
+  })
+
+  // -------------------------------------------------------------------------
   // Blob round-trip for thumb
   // -------------------------------------------------------------------------
   it("thumb Blob round-trips through add → getById intact", async () => {
