@@ -19,7 +19,8 @@ export const SiteSavedSchema = z.object({
 export const RefreshThumbnailSchema = z.object({
   type: z.literal("REFRESH_THUMBNAIL"),
   id: z.number(),
-  faviconUrl: z.string(),
+  url: z.string().url(),
+  faviconUrl: z.string().nullable(),
 })
 
 // ── TypeScript types (inferred from schemas) ───────────────────────────────────

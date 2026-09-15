@@ -187,9 +187,18 @@ async function copyGalleryForAI(): Promise<void> {
 }
 
 // Imports a backup file, merges new URLs, then asks the service worker to
-// backfill a thumbnail from each new site's favicon — one at a time, so the
-// import doesn't fire dozens of parallel fetches. Returns the added count.
-async function importGallery(file: File): Promise<number> {
+// backfill a real thumbnail for each new site by re-reading the page's og:image
+// — one at a time, so the import doesn't fire dozens of parallel page fetches.
+// The backfill isn't awaited: each finished thumbnail broadcasts SITE_SAVED and
+// the grid reloads, so thumbnails fill in progressively while the import status
+// shows immediately.
+//
+// The page fetch happens in the service worker, which needs the https://*/*
+// optional host permission granted before it can fetch an arbitrary domain. A
+// fresh profile/browser never has it granted yet, so we check first and skip
+// the (otherwise silently-failing) backfill entirely — the caller uses
+// `thumbnailsSkipped` to tell the user why thumbnails stayed favicons.
+async function importGallery(file: File): Promise<{ added: number; thumbnailsSkipped: boolean }> {
   const parsed = parseBackup(await file.text())
   const added = await savedSiteStore.bulkAddNew(
     parsed.map((s) => ({
@@ -201,16 +210,28 @@ async function importGallery(file: File): Promise<number> {
     }))
   )
 
-  for (const site of added) {
-    if (site.id === undefined || site.favicon === null) continue
-    await chrome.runtime.sendMessage({
-      type: "REFRESH_THUMBNAIL",
-      id: site.id,
-      faviconUrl: site.favicon,
-    })
+  const hasThumbnailPermission = await chrome.permissions.contains({
+    origins: ["https://*/*"],
+  })
+
+  if (hasThumbnailPermission) {
+    void (async () => {
+      for (const site of added) {
+        if (site.id === undefined) continue
+        await chrome.runtime.sendMessage({
+          type: "REFRESH_THUMBNAIL",
+          id: site.id,
+          url: site.url,
+          faviconUrl: site.favicon,
+        })
+      }
+    })()
   }
 
-  return added.length
+  return {
+    added: added.length,
+    thumbnailsSkipped: !hasThumbnailPermission && added.length > 0,
+  }
 }
 
 // ── Gallery page ─────────────────────────────────────────────────────────────
@@ -433,11 +454,18 @@ export default function GalleryPage() {
     e.target.value = ""
     if (!file) return
     try {
-      const count = await importGallery(file)
+      const { added, thumbnailsSkipped } = await importGallery(file)
       await load()
-      flashStatus(
-        count === 0 ? "Nothing new to import" : `Imported ${count} site${count === 1 ? "" : "s"}`
-      )
+      if (added === 0) {
+        flashStatus("Nothing new to import")
+      } else if (thumbnailsSkipped) {
+        flashStatus(
+          `Imported ${added} site${added === 1 ? "" : "s"} — grant the thumbnail permission above to fetch real thumbnails`
+        )
+        setShowPermissionBanner(true)
+      } else {
+        flashStatus(`Imported ${added} site${added === 1 ? "" : "s"}`)
+      }
     } catch {
       flashStatus("Import failed — not a valid backup file")
     }
