@@ -2,17 +2,44 @@ import { categorize } from "@/lib/categorizer"
 import { parseMessage } from "@/lib/messages"
 import { extractOgImage } from "@/lib/og-image"
 import { savedSiteStore } from "@/lib/store"
-import { fetchAndResize } from "@/lib/thumbnail-service"
+import { GENERIC_OG_DOMAINS, fetchAndResize } from "@/lib/thumbnail-service"
 import { getYoutubeThumbnailUrls, getYoutubeVideoId } from "@/lib/youtube"
 
 // Bounds a single page download so one unresponsive site can't stall the
 // import backfill — a per-request abort, not a background timer.
 const PAGE_FETCH_TIMEOUT_MS = 10_000
 
+// og tags live in <head>, so a prefix of the document is enough.
+const PAGE_MAX_BYTES = 512 * 1024
+
+async function readCapped(response: Response): Promise<string> {
+  if (response.body === null) {
+    return ""
+  }
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let html = ""
+  let bytes = 0
+  while (bytes < PAGE_MAX_BYTES) {
+    const { done, value } = await reader.read()
+    if (done) {
+      break
+    }
+    bytes += value.byteLength
+    html += decoder.decode(value, { stream: true })
+  }
+  await reader.cancel()
+  return html
+}
+
 async function fetchOgImageUrl(pageUrl: string): Promise<string | null> {
   try {
     const response = await fetch(pageUrl, { signal: AbortSignal.timeout(PAGE_FETCH_TIMEOUT_MS) })
-    return extractOgImage(await response.text(), pageUrl)
+    if (!response.ok || !response.headers.get("content-type")?.includes("text/html")) {
+      return null
+    }
+    // Resolve relative URLs against the post-redirect URL.
+    return extractOgImage(await readCapped(response), response.url || pageUrl)
   } catch {
     return null
   }
@@ -74,19 +101,26 @@ async function handleMessage(raw: unknown): Promise<{ ok: boolean; error?: strin
     case "REFRESH_THUMBNAIL": {
       // Import backfill: the imported record has no thumbnail. Re-read the page's
       // og:image (text only) and run it through the same fetch/resize path as
-      // SAVE_REQUEST, falling back to YouTube's thumbnails, then the favicon.
+      // SAVE_REQUEST, falling back to YouTube's thumbnails. With no usable image
+      // thumb stays null (the card shows the favicon; a later run can retry).
       // Still synchronous-per-message — no queue, no timers (ADR 0001).
       try {
-        const imageUrl = await fetchOgImageUrl(msg.url)
+        const hostname = new URL(msg.url).hostname
+        const isGenericOg = GENERIC_OG_DOMAINS.some(
+          (d) => hostname === d || hostname.endsWith(`.${d}`)
+        )
+        const imageUrl = isGenericOg ? null : await fetchOgImageUrl(msg.url)
         const youtubeVideoId = getYoutubeVideoId(msg.url)
         const youtubeUrls =
           youtubeVideoId !== undefined ? getYoutubeThumbnailUrls(youtubeVideoId) : []
         const candidates = [imageUrl, ...youtubeUrls].filter((u): u is string => Boolean(u))
-        const thumbBlob = await fetchAndResize(
-          candidates[0] ?? msg.faviconUrl ?? "",
-          msg.faviconUrl ?? "",
-          candidates.slice(1)
-        )
+        const [first, ...rest] = candidates
+        if (first === undefined) {
+          return { ok: true }
+        }
+        // Empty favicon URL: fetchAndResize throws if every candidate fails,
+        // rather than storing a favicon-derived thumbnail.
+        const thumbBlob = await fetchAndResize(first, "", rest)
         await savedSiteStore.update(msg.id, { thumb: thumbBlob })
         new BroadcastChannel("url-gallery").postMessage({ type: "SITE_SAVED" })
         return { ok: true }

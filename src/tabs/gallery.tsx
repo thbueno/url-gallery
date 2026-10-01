@@ -73,7 +73,13 @@ function useColumnCount(containerRef: React.RefObject<HTMLDivElement | null>): n
 
 // ── Permission-declined banner ────────────────────────────────────────────────
 
-function PermissionBanner({ onDismiss }: { onDismiss: () => void }) {
+function PermissionBanner({
+  onDismiss,
+  onGranted,
+}: {
+  onDismiss: () => void
+  onGranted: () => void
+}) {
   const [requesting, setRequesting] = useState(false)
 
   async function handleEnable() {
@@ -83,6 +89,7 @@ function PermissionBanner({ onDismiss }: { onDismiss: () => void }) {
       if (granted) {
         await chrome.storage.local.remove("permissionDeclined")
         onDismiss()
+        onGranted()
       }
     } finally {
       setRequesting(false)
@@ -186,6 +193,27 @@ async function copyGalleryForAI(): Promise<void> {
   await navigator.clipboard.writeText(toAIDigest(sites.map(toBackupSite)))
 }
 
+// Asks the service worker for a real thumbnail of each site, one at a time so
+// we don't fire dozens of parallel page fetches. With no `sites`, backfills every
+// saved site whose thumbnail is still null. A failure on one site (e.g. the
+// service worker restarting) must not abort the rest.
+async function backfillThumbnails(sites: SavedSite[] | null): Promise<void> {
+  const targets = sites ?? (await savedSiteStore.getAll()).filter((s) => s.thumb === null)
+  for (const site of targets) {
+    if (site.id === undefined) continue
+    try {
+      await chrome.runtime.sendMessage({
+        type: "REFRESH_THUMBNAIL",
+        id: site.id,
+        url: site.url,
+        faviconUrl: site.favicon,
+      })
+    } catch {
+      // Skip this site; its thumb stays null and can be retried later.
+    }
+  }
+}
+
 // Imports a backup file, merges new URLs, then asks the service worker to
 // backfill a real thumbnail for each new site by re-reading the page's og:image
 // — one at a time, so the import doesn't fire dozens of parallel page fetches.
@@ -215,17 +243,7 @@ async function importGallery(file: File): Promise<{ added: number; thumbnailsSki
   })
 
   if (hasThumbnailPermission) {
-    void (async () => {
-      for (const site of added) {
-        if (site.id === undefined) continue
-        await chrome.runtime.sendMessage({
-          type: "REFRESH_THUMBNAIL",
-          id: site.id,
-          url: site.url,
-          faviconUrl: site.favicon,
-        })
-      }
-    })()
+    void backfillThumbnails(added)
   }
 
   return {
@@ -769,7 +787,10 @@ export default function GalleryPage() {
         </div>
 
         {showPermissionBanner && (
-          <PermissionBanner onDismiss={() => setShowPermissionBanner(false)} />
+          <PermissionBanner
+            onDismiss={() => setShowPermissionBanner(false)}
+            onGranted={() => void backfillThumbnails(null)}
+          />
         )}
 
         {/* Scroll container — bounded height required for virtualization */}
