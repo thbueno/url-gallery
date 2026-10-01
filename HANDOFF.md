@@ -1,114 +1,71 @@
-# URL Gallery — Session Handoff
+# Handoff: url-gallery — plasmo dev crash + pnpm/node cleanup
 
-**Date:** 2026-06-10
-**Branch:** `main`
-**Last commit:** `3c5fc05` — feat: phase 4 — pinned tag chips (#24) + Framer Motion row animations (#25)
-**All tests:** 86 passing
+Session: ses_f2d1df235ffeL52J1UwJqkku4Y (OpenCode, GLM-5.3-Flash)
+Date: 2026-09-24
+Project: `/home/ghosthands/mission-control/url-gallery` (Plasmo 0.90.5 browser extension, React 18, Tailwind 3, pnpm)
 
----
+## What was fixed (done — no action needed)
 
-## Build status: ALL PHASES COMPLETE (Issues #1–#25)
+1. **`plasmo: command not found` / missing `node_modules`**
+   - Root cause: `/home/ghosthands/pnpm-workspace.yaml` (stray, contained only an `allowBuilds` entry) made pnpm v11 treat the home dir as a workspace boundary. `pnpm install` in the project was a silent no-op ("Already up to date") and never created `node_modules`.
+   - Fix: moved the file to `/tmp/opencode/home-pnpm-workspace.yaml.bak` (delete when safe), added project `pnpm-workspace.yaml`, ran `pnpm install`.
+2. **pnpm v11 settings location**: `pnpm.onlyBuiltDependencies` in `package.json` is ignored by pnpm v11+ — settings belong in `pnpm-workspace.yaml` (`allowBuilds:` keys). Current file has `allowBuilds:` for the 8 native deps; do not duplicate `onlyBuiltDependencies`.
+3. **Stale pnpm/node installs (user-requested clean pass)**
+   - Arch package `pnpm 11.3.0-1` was removed via `pkexec pacman -R pnpm` (files had also been touched by an `npm uninstall -g`).
+   - pnpm 12.6.0 installed via official installer at `~/.local/share/pnpm` (path added to `~/.bashrc`).
+   - node reinstalled via mise (`mise uninstall/install node@26.8.2`); global default is still 26.8.2 in `~/.config/mise/config.toml`.
+   - Project pins node via newly created `mise.toml` (`node = "22.6.0"`).
+   - Native dep build scripts approved via `pnpm approve-builds --all`.
+   - node_modules was rebuilt from scratch (`rm -rf node_modules; pnpm install`) — clean.
 
-All planned phases from `docs/build-guide.md` (issues #15–#25) have been implemented and committed. The extension is feature-complete for v2.
+4. **Note**: `package.json` was also pinned/left unchanged except a transient `pnpm.overrides` attempt that was reverted. git diff may show only `pnpm-workspace.yaml` + `mise.toml` as new files.
 
----
+## The remaining problem (unsolved)
 
-## What was built this session (v2 phases)
+`plasmo dev` crashes with glibc heap corruption (“double free or corruption (out|!prev|fasttop)” / “corrupted size vs. prev_size”) → SIGABRT after a variable delay (10s–60s+), apparently **when HMR/watcher reacts to file changes**. Initial build succeeds (“Extension re-packaged in ~10s 🚀”). `plasmo build` works fine.
 
-### Phase 1 (Issues #17, #18, #19, #20)
-Implemented in a prior session. See commit `1855236`.
+### Evidence collected
+- Crashing process = plasmo's own node process (core-dump confirmed, e.g. Executable: mise node, cmdline `node .../plasmo/dist/index.js dev`).
+- In crash cores, the loaded N-API addons (candidates): lmdb 2.7.11 (and once 3.5.6 with a pnpm override that did NOT fix it), msgpackr-extract 3.0.4, @parcel/watcher 2.5.1, @parcel/fs-search 2.9.3, @parcel/hash 2.8.3/2.9.3, @parcel/node-resolver-core 3.0.3, @parcel/optimizer-image 2.9.3 (sharp-linux-x64 0.33.5), @parcel/source-map, @parcel/transformer-js (parcel-swc), swc 1.3.96, lightningcss 1.32.0 — all bundled sizes from parcel 2.9.3, dated Feb 2023.
+- Crashes reproduce with and without pnpm (direct `node .../plasmo/dist/index.js dev`), on node 26.8.2, 22.21.1, 22.6.0, 20.19.5. So: NOT pnpm, NOT node version.
+- glibc is 2.44 (Arch, current). Old C++ in these addons may violate allocator rules exposed by newer glibc/V8 malloc behavior.
+- Matches open upstream bugs: **PlasmoHQ/plasmo#1060** (https://github.com/PlasmoHQ/plasmo/issues/1060) and **nodejs/node#55145** (https://github.com/nodejs/node/issues/55145, closed not-planned). Plasmo has not released since 0.90.5; dist-tags: latest 0.90.5, lab 0.65.4-lab.0. Effectively unmaintained.
+- `react-grab` (devDep, dynamic import in `src/tabs/gallery.tsx:4`) is only bundled into the extension runtime — unlikely involved, never disproven.
+- pnpm overrides for `lmdb ^3.5.6` were tried and reverted (no effect).
 
-### Phase 2 — Data model (Issues #15, #16) — commit `3ba85aa`
-
-- **#15** Dexie v2 schema: `SavedSite.category: string` → `tags: string[]`; `db.version(2)` with `*tags` multi-entry index + upgrade fn migrating category → tags[0]
-- **#16** Full logic layer: `categorizer.ts` returns `string[]`, `ALL_TAGS` export; `galleryStore` → `activeTags`, OR filter; `updateSiteTags`; `renameTag` + `deleteTag` on store; tests updated + OR-filter test added (86 total)
-
-### Phase 3 — Tag features (Issues #21, #22, #23) — commit `2d0b37a`
-
-- **#21** `SiteCard`: `DropdownMenuCheckboxItem` multi-select; guard empty → `["Uncategorized"]`; chip shows `tag +N` format
-- **#22** `ManageTagsSheet` (new): shadcn `Sheet` panel; add/rename/delete tags; rename cascades to all `savedSites`; delete cascades + fallback to Uncategorized; custom tags persisted in `chrome.storage.local`
-- **#23** `tagSettingsStore` (new Zustand slice): `pinnedTags` + `customTags` in `chrome.storage.local`; `CategoryFilter` pin button per tag (hover-visible, always-visible when pinned)
-
-**Bug fix** — commit `df0815d`: sidebar tag filter was multi-selecting (appending). Fixed `CategoryFilter.toggleTag` → single-select: `onSelect(activeTags.includes(name) ? [] : [name])`.
-
-### Phase 4 — Top bar + animations (Issues #24, #25) — commit `3c5fc05`
-
-- **#24** Top bar: search constrained to `w-56`; `flex-1` chip area renders pinned tags as rounded buttons; chip click = single-select toggle (`setActiveTags`)
-- **#25** Framer Motion (`framer-motion@12`): virtualizer rows animate in on filter change (opacity 0→1, y 8→0, 180ms, stagger capped at 10×30ms); initial page load skips animation via `hasMounted` ref; `filterVersion` state increments on `activeTags` change; inner `motion.div` key = `filterVersion` keeps virtualizer positioning div key stable
-
----
-
-## Critical invariants (never break)
-
-- **Zod pinned to exactly `3.23.8`** — Parcel 2 (Plasmo 0.90.5) cannot resolve 3.24+ dual-mode package. See commit `ea573ae`.
-- **No pipeline in background.ts** — no setTimeout, alarms, in-memory queues (ADR 0001)
-- **All design tokens in `src/style.css`** — no hardcoded hex/rem/px in components (ADR 0007)
-- **Every new shadcn primitive → also add to `src/tabs/design-system.tsx`**
-- **Biome:** always `./node_modules/.bin/biome` — global binary OOM-crashes on this machine
-- **pnpm only** — never npm/yarn
-- **`@/` path alias** for all internal imports
-- **Dexie schema:** never mutate existing `version(N)` blocks — add new `version(N+1)` only
-
----
-
-## Key new files (v2 additions)
-
+### Repro snippet (from a shell with node on PATH)
+```bash
+PLASMO = "<project>/node_modules/.pnpm/plasmo@0.90.5_*/node_modules/plasmo/dist/index.js"
+node "$PLASMO" dev &
+sleep 30; touch src/popup.html; touch src/field/*.tsx   # ≈30–60s after touch → SIGABRT
 ```
-src/
-  components/
-    gallery/
-      ManageTagsSheet.tsx        ← sheet UI for add/rename/delete tags
-      CategoryFilter.tsx         ← updated: pinnedTags + pin button per tag; single-select
-      SiteCard.tsx               ← updated: multi-select checkbox dropdown for tags
-  store/
-    tagSettingsStore.ts          ← Zustand: pinnedTags + customTags via chrome.storage.local
-    galleryStore.ts              ← updated: activeTags[], OR filter, renameTag, deleteTag
-  lib/
-    store.ts                     ← Dexie v2: *tags index, renameTag, deleteTag methods
-    categorizer.ts               ← returns string[], ALL_TAGS export
-  components/ui/
-    sheet.tsx                    ← shadcn Sheet (installed this session)
-```
+A plain `pnpm dev` also reproduces. An initial build runs fine; the crash hits on/around rebuilds.
 
----
+### Diagnostics tooling used (available again if needed)
+- `coredumpctl list / dump <pid> --output=<file>` then `gdb -q <node> <core> -ex 'info shared'` (lacks symbols; `info shared` still lists .node addon paths — most useful).
+- `journalctl --since '<time>' | grep coredump` for the crashing PID && cmdline.
+- `strace -f -e trace=openat -o log node "$PLASMO" dev` (strace installed via `pkexec omarchy pkg add strace`).
+- Leftover files: `/tmp/opencode/dev*.log`, `/tmp/opencode/strace.log`, `/tmp/opencode/g*.txt`, `/tmp/opencode/plasmo-min/` (unfinished minimal repro — `plasmo init` invocation cut off).
 
-## How to load the extension
+## Suggested next steps (for the continuing session)
 
-```sh
-pnpm run build        # → build/chrome-mv3-prod/
-# OR
-pnpm run dev          # watch → build/chrome-mv3-dev/
-```
-
-1. `chrome://extensions` → Developer Mode ON → Load Unpacked
-2. Select `build/chrome-mv3-prod/` (or dev)
-3. Click extension icon → opens gallery tab
-4. Design system (dev only): `chrome-extension://<id>/tabs/design-system.html`
-
----
-
-## Installed shadcn primitives (10)
-
-`src/components/ui/`: avatar, badge, button, card, dropdown-menu, input, scroll-area, separator, **sheet** *(new)*, skeleton
-
----
-
-## Remaining work (post-v2)
-
-No tracked issues remain. Possible next:
-- Manual stress test: load extension → "Seed DB" → DevTools → Memory → heap snapshot
-- E2E tests (Playwright + chrome-extension loader)
-- Options page (custom categories, export all, clear all)
-- Design system page: add `ManageTagsSheet`, `CategoryFilter`, pinned chip examples
-- Issue #20 (toolbar fav-click / remove fav-button content script) — implemented in phase 1 commit `1855236` but verify the `scripting` + `activeTab` permission flow works correctly in prod
-
----
+1. **Finish the minimal repro** (`/tmp/opencode/plasmo-min`): `plasmo init --npm`, then run dev until crash on this machine to split “project-specific” vs “environment-wide”.
+2. **If project-specific**: bisect the project (minimal src? drop `react-grab`, remove `@dnd-kit`, `re-render` loops, etc.) or check `src/*/hooks` for changes at runtime. A `mkdir`/symlink-based watcher spam or huge file count could trigger the parcel-cache (lmdb) heap bug.
+3. **If environment-wide**: file upstream (plasmo#1060 is the existing tracker) and either pin an old working combo (e.g. node 22.6 — currently DOES crash on HMR, so unlikely) or move to WXT:
+   - WXT (https://wxt.dev) is the actively-supported Plasmo alternative; migration effort is medium (manifest config, entrypoint convention, HMR works).
+4. **Pragmatic interim workflow** (works today): `pnpm build` → load `build/chrome-mv3-prod` unpacked → manual reload after changes. Optionally wire a tiny `pnpm build && cp -r build/chrome-mv3-prod build/prod-live` refresh alias.
 
 ## Suggested skills
+- `diagnose-crash` — already loaded in that session; use coredumpctl+gdb workflow for any further core analysis (base dir `/home/ghosthands/.claude/skills/diagnose-crash`).
+- `omarchy` — for system-level install/privilege rules on this machine (`pkexec` for package ops without a visible terminal; `omarchy pkg add <pkg>` matches the distro conventions used here).
+- `grill-me` / `grilling` — if user wants to stress-test the WXT-migration plan.
+- `ponytail---ponytail` is not needed here; prefer `tdd` if WXT migration starts fresh with tests.
+- `handoff` — regenerate this doc if context changes materially.
 
-| Skill | When |
-|---|---|
-| `/shadcn` | Adding any new UI primitive |
-| `/tdd` | Touching the 4 tested modules (`store`, `metadata-extractor`, `categorizer`, `thumbnail-service`) |
-| `/frontend-design` | New page or major UI surface |
-| `/code-review` | Before any PR or major change |
+## Notes / gotchas
+- `pkexec` pops a GUI polkit prompt and requires user interaction — worked for `pacman -R pnpm` and `omarchy pkg add strace`; plain `sudo` without a terminal fails.
+- pnpm: `~/.local/share/pnpm/bin` is not on non-intered shells' PATH; export it before calling pnpm in agent shells.
+- Stack race warnings in journal relate to `systemd-coredump` only; no host obliterates.
+- `src/popup.html` is **generated** by `scripts/generate-popup-html.mjs` on every dev/build — don't hand-edit.
+- `mise.toml` now pins node 22.6.0 in this project. If migration to WXT works, consider removing the pin and going back to a modern node.
+- `/tmp/opencode` is this workspace's approved scratch dir — keep dumps/cores there, and do not leave cores lying around.
