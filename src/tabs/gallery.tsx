@@ -1,6 +1,10 @@
 import "@/style.css"
 
-if (process.env.NODE_ENV === "development") {
+// PROTOTYPE: react-grab's floating toolbar sits on top of the variant switcher, so skip it on `?variant=`.
+if (
+  process.env.NODE_ENV === "development" &&
+  !new URLSearchParams(location.search).has("variant")
+) {
   import("react-grab")
 }
 
@@ -14,7 +18,7 @@ import {
   SearchIcon,
   XIcon,
 } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { Suspense, lazy, useEffect, useRef, useState } from "react"
 
 import { CategoryFilter } from "@/components/gallery/CategoryFilter"
 import { SiteCard } from "@/components/gallery/SiteCard"
@@ -254,7 +258,7 @@ async function importGallery(file: File): Promise<{ added: number; thumbnailsSki
 
 // ── Gallery page ─────────────────────────────────────────────────────────────
 
-export default function GalleryPage() {
+function Gallery() {
   const sites = useGalleryStore((s) => s.sites)
   const tags = useGalleryStore((s) => s.tags)
   const activeTags = useGalleryStore((s) => s.activeTags)
@@ -901,4 +905,24 @@ export default function GalleryPage() {
       </main>
     </div>
   )
+}
+
+// ── Prototype hook (dev-only, throwaway) ─────────────────────────────────────
+// `?variant=` on this route renders the BoardUI restyle prototype instead of the real gallery.
+// The lazy import sits behind a NODE_ENV check so production builds drop it entirely.
+
+const GalleryPrototype =
+  process.env.NODE_ENV === "development"
+    ? lazy(() => import("@/components/prototype-boardui/GalleryPrototype"))
+    : null
+
+export default function GalleryRoute() {
+  if (GalleryPrototype && new URLSearchParams(location.search).has("variant")) {
+    return (
+      <Suspense fallback={null}>
+        <GalleryPrototype />
+      </Suspense>
+    )
+  }
+  return <Gallery />
 }
