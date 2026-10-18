@@ -63,8 +63,10 @@ to the real gallery. Without `?variant=` the app is untouched.
   **No hex, no px font sizes, no hardcoded radius, no `rounded-full`** (except true circles like
   status dots/avatars) — otherwise the Tweaks panel can't reach it.
 - Use existing shadcn primitives in `src/components/ui/` (Button, Input, DropdownMenu, Skeleton…).
-- Read-only: clicking a site opens its URL in a new tab; no delete/pin/tag mutations (show the
-  affordances, wire them to no-ops).
+- Clicking a site opens its URL in a new tab. Never write to Dexie / chrome.storage / the real
+  stores (reading is fine). Variants B and C show delete/pin/tag affordances as no-ops. Variant A
+  (the chosen direction) makes tag edits, tag pins, site pins, delete and bulk select REAL but
+  IN-MEMORY ONLY via `editState.ts` (a Zustand overlay on top of `useSites()`); reload resets them.
 - Real data via `useSites()`; must look good with 0 thumbnails (favicon / letter-mark fallback) and
   with real thumbnails (`site.thumb` blob → object URL, revoke on unmount).
 - Variants must not share a layout component. Small shared bits (SiteThumb, Favicon) are fine.

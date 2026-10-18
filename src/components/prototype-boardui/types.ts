@@ -24,8 +24,11 @@ export interface SiteStats {
 }
 
 /**
- * Everything a variant receives. Variants are READ-ONLY: clicking a site opens its URL in a new
- * tab; there is no delete / pin / tag mutation. Show those affordances but wire them to no-ops.
+ * Everything a variant receives. This data is READ-ONLY and comes from the real stores: clicking a
+ * site opens its URL in a new tab, and nothing may ever be written to Dexie / chrome.storage /
+ * `useGalleryStore` / `useTagSettingsStore`. Variant A (the winner) layers REAL but IN-MEMORY edits
+ * (tags, pinned tags, site pins, delete, selection) on top via `editState.ts`; reloading resets
+ * them. Variants B and C keep the affordances as no-ops.
  * Search, tag filtering and sorting are the variant's own job (client-side over `sites`).
  *
  * Data is real (IndexedDB via the gallery stores) and falls back to ~24 fixture sites when the

@@ -1,11 +1,20 @@
-import { Bookmark, LayoutGrid, Moon, Search, Sun } from "lucide-react"
+import { Bookmark, ChartNoAxesColumn, LayoutGrid, Moon, Pin, Search, Sun } from "lucide-react"
 import { type Ref, useEffect, useState } from "react"
 
 import { cn } from "@/lib/utils"
 import type { TagInfo } from "../../types"
+import { TagDot } from "./TagChip"
+
+export type Page = "gallery" | "overview"
 
 export interface SidebarProps {
+  page: Page
+  onPageChange: (page: Page) => void
+  /** Tags in display order; `pinned` rows are listed in their own section. */
   tags: TagInfo[]
+  /** Pinned tag names in navbar order. */
+  pinnedTags: string[]
+  onTogglePinTag: (tag: string) => void
   totalSites: number
   /** null = "All sites". */
   activeTag: string | null
@@ -29,20 +38,24 @@ function NavRow({
   label,
   count,
   onClick,
+  pinSlot,
 }: {
   active: boolean
   icon?: React.ReactNode
   label: string
-  count: number
+  count?: number
   onClick: () => void
+  /** Reserved trailing slot (pin toggle). Rendered outside the row button. */
+  pinSlot?: React.ReactNode
 }) {
-  return (
+  const button = (
     <button
       type="button"
       onClick={onClick}
       aria-current={active ? "true" : undefined}
       className={cn(
         rowBase,
+        pinSlot && "pr-9",
         active
           ? "border-border bg-[hsl(var(--surface-inner))] text-foreground shadow-[var(--shadow-xs)]"
           : "text-muted-foreground hover:bg-[hsl(var(--surface-tertiary)/0.6)] hover:text-foreground"
@@ -54,14 +67,48 @@ function NavRow({
         </span>
       ) : null}
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      <span
-        className={cn(
-          "shrink-0 text-xs font-normal tabular-nums transition-colors duration-150",
-          active ? "text-foreground" : "text-muted-foreground"
-        )}
-      >
-        {count}
-      </span>
+      {count !== undefined ? (
+        <span
+          className={cn(
+            "shrink-0 text-xs font-normal tabular-nums transition-colors duration-150",
+            active ? "text-foreground" : "text-muted-foreground"
+          )}
+        >
+          {count}
+        </span>
+      ) : null}
+    </button>
+  )
+  if (!pinSlot) return button
+  return (
+    <div className="group/pin relative">
+      {button}
+      {pinSlot}
+    </div>
+  )
+}
+
+function PinToggle({
+  tag,
+  pinned,
+  onToggle,
+}: { tag: string; pinned: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={pinned ? `Unpin ${tag} from the top bar` : `Pin ${tag} to the top bar`}
+      aria-pressed={pinned}
+      className={cn(
+        "absolute top-1/2 right-1.5 flex size-6 -translate-y-1/2 items-center justify-center rounded-md outline-none",
+        "transition-[opacity,color,background-color,transform] duration-150 ease-out active:scale-[0.9]",
+        "hover:bg-[hsl(var(--surface-tertiary))] hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring",
+        pinned
+          ? "text-foreground opacity-100"
+          : "text-muted-foreground opacity-0 group-hover/pin:opacity-100"
+      )}
+    >
+      <Pin className={cn("size-3.5", pinned && "fill-current")} aria-hidden="true" />
     </button>
   )
 }
@@ -111,7 +158,11 @@ function ThemeSegment() {
 }
 
 export function Sidebar({
+  page,
+  onPageChange,
   tags,
+  pinnedTags,
+  onTogglePinTag,
   totalSites,
   activeTag,
   onTagChange,
@@ -120,6 +171,32 @@ export function Sidebar({
   searchRef,
   className,
 }: SidebarProps) {
+  const byName = new Map(tags.map((t) => [t.name, t]))
+  const pinnedRows = pinnedTags.flatMap((n) => byName.get(n) ?? [])
+  const pinnedSet = new Set(pinnedTags)
+  const otherRows = tags.filter((t) => !pinnedSet.has(t.name))
+  const sectionLabel =
+    "px-2.5 pt-4 pb-1.5 text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase"
+  const renderTag = (t: TagInfo) => (
+    <NavRow
+      key={t.name}
+      active={page === "gallery" && activeTag === t.name}
+      icon={<TagDot name={t.name} className="opacity-80" />}
+      label={t.name}
+      count={t.count}
+      onClick={() => {
+        onPageChange("gallery")
+        onTagChange(page === "gallery" && activeTag === t.name ? null : t.name)
+      }}
+      pinSlot={
+        <PinToggle
+          tag={t.name}
+          pinned={pinnedSet.has(t.name)}
+          onToggle={() => onTogglePinTag(t.name)}
+        />
+      }
+    />
+  )
   return (
     <aside
       className={cn(
@@ -164,30 +241,37 @@ export function Sidebar({
         </kbd>
       </label>
 
+      <nav aria-label="Pages" className="flex flex-col gap-0.5 px-0.5">
+        <NavRow
+          active={page === "gallery"}
+          icon={<LayoutGrid className="size-4" />}
+          label="Gallery"
+          count={totalSites}
+          onClick={() => {
+            onPageChange("gallery")
+            if (page === "gallery") onTagChange(null)
+          }}
+        />
+        <NavRow
+          active={page === "overview"}
+          icon={<ChartNoAxesColumn className="size-4" />}
+          label="Overview"
+          onClick={() => onPageChange("overview")}
+        />
+      </nav>
+
       <nav
         aria-label="Tags"
         className="scrollbar-minimal -mx-0.5 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-0.5"
       >
-        <NavRow
-          active={activeTag === null}
-          icon={<LayoutGrid className="size-4" />}
-          label="All sites"
-          count={totalSites}
-          onClick={() => onTagChange(null)}
-        />
-        <p className="px-2.5 pt-4 pb-1.5 text-[0.6875rem] font-medium tracking-[0.06em] text-muted-foreground uppercase">
-          Tags
-        </p>
-        {tags.map((t) => (
-          <NavRow
-            key={t.name}
-            active={activeTag === t.name}
-            icon={<span className="size-1.5 rounded-full bg-current opacity-40" />}
-            label={t.name}
-            count={t.count}
-            onClick={() => onTagChange(activeTag === t.name ? null : t.name)}
-          />
-        ))}
+        {pinnedRows.length > 0 ? (
+          <>
+            <p className={sectionLabel}>Pinned</p>
+            {pinnedRows.map(renderTag)}
+          </>
+        ) : null}
+        <p className={sectionLabel}>Tags</p>
+        {otherRows.map(renderTag)}
       </nav>
 
       <div className="px-0.5 pb-0.5">

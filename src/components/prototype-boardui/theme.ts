@@ -23,6 +23,8 @@
  *   --shadow-primary    primary button shadow (inner highlight + 1px ring)
  *   --shadow-2xs|xs|sm|md|lg|card|dropdown|pop   BoardUI elevation set
  *   --radius-inner      radius for content inset ~6px inside a --radius-card container
+ *   --tag-blue|green|purple-bg / -fg   BoardUI status-chip pairs (soft tint + darker text) for tag
+ *                       chips; shared by all palettes (see TAG_TOKENS). Dark backgrounds carry alpha.
  */
 
 export type PaletteId = "board-blue" | "graphite" | "sage" | "ember" | "iris"
@@ -687,6 +689,33 @@ export const PALETTES: Record<PaletteId, Palette> = {
   },
 }
 
+/**
+ * Tag chip colours: BoardUI `status-blue`, `status-lime` (the "green") and `status-purple` pairs,
+ * converted to HSL triplets. Shared across all five palettes (tags are content colour, not chrome),
+ * but kept per mode. Dark backgrounds use the BoardUI translucent fills ("h s% l% / a").
+ */
+export const TAG_HUES = ["blue", "green", "purple"] as const
+export type TagHue = (typeof TAG_HUES)[number]
+
+export const TAG_TOKENS: Record<Mode, TokenMap> = {
+  light: {
+    "tag-blue-bg": "213.3 100% 87.3%",
+    "tag-blue-fg": "227.1 75.7% 41.1%",
+    "tag-green-bg": "80.7 89.7% 78.9%",
+    "tag-green-fg": "83.3 100% 19.4%",
+    "tag-purple-bg": "268.7 100% 95.5%",
+    "tag-purple-fg": "274.9 96.1% 52.2%",
+  },
+  dark: {
+    "tag-blue-bg": "226.9 59.3% 21.2% / 0.6",
+    "tag-blue-fg": "210.7 100% 77.8%",
+    "tag-green-bg": "89.3 87.8% 9.6% / 0.6",
+    "tag-green-fg": "83.9 100% 40.5%",
+    "tag-purple-bg": "274.4 72.7% 31.6% / 0.5",
+    "tag-purple-fg": "271.1 100% 84.9%",
+  },
+}
+
 export const PALETTE_LIST: Palette[] = Object.values(PALETTES)
 
 /** Derives every radius token from one base value (px). Ratios: sm .6, lg 1.35, xl 1.75, card 1.5. */
@@ -710,6 +739,7 @@ export function applyTheme(paletteId: PaletteId, mode: Mode, radiusPx: number): 
   const root = document.documentElement
   const tokens: TokenMap = {
     ...PALETTES[paletteId][mode],
+    ...TAG_TOKENS[mode],
     ...radiusTokens(radiusPx),
     "font-sans": FONT_SANS,
     "font-display": FONT_SANS,
