@@ -5,12 +5,12 @@ import { cva } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const sidebarVariants = cva(
-  "flex shrink-0 flex-col overflow-hidden rounded-card bg-card transition-[width] duration-200",
+  "flex shrink-0 flex-col gap-3 overflow-hidden rounded-card bg-surface-section p-1.5 transition-[width] duration-200 motion-reduce:transition-none",
   {
     variants: {
       collapsed: {
-        true: "w-10",
-        false: "w-60",
+        true: "w-12",
+        false: "w-sidebar",
       },
     },
     defaultVariants: { collapsed: false },
@@ -20,40 +20,51 @@ const sidebarVariants = cva(
 interface SidebarShellProps {
   collapsed: boolean
   onToggleCollapsed: () => void
-  /** Main body, shown only while expanded (e.g. the tag list). */
+  /** Main body, shown only while expanded (search, nav, tag list). */
   children?: React.ReactNode
+  /** Shown instead of the body while collapsed (icon-only controls). */
+  rail?: React.ReactNode
   /** Pinned to the bottom, shown only while expanded. */
   footer?: React.ReactNode
   className?: string
 }
 
+/** Inset section-surface panel: brand + collapse toggle on top, body, footer at the bottom. */
 export function SidebarShell({
   collapsed,
   onToggleCollapsed,
   children,
+  rail,
   footer,
   className,
 }: SidebarShellProps) {
   return (
     <aside className={cn(sidebarVariants({ collapsed }), className)}>
-      <div className="flex shrink-0 items-center gap-2 px-2 py-5">
+      <div className={cn("flex shrink-0 items-center gap-2.5", !collapsed && "px-1 pt-1")}>
         {!collapsed && (
           <>
-            <BookmarkIcon size={15} className="ml-2 text-foreground/50" />
-            <span className="flex-1 text-sm font-semibold tracking-tight">URL Gallery</span>
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary-gradient text-primary-foreground shadow-primary">
+              <BookmarkIcon className="size-3.5" aria-hidden="true" />
+            </span>
+            <span className="flex-1 truncate text-sm font-semibold tracking-tight">
+              URL Gallery
+            </span>
           </>
         )}
         <button
           type="button"
           onClick={onToggleCollapsed}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          className={cn(
+            "flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-surface-tertiary/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+            collapsed && "size-9 rounded-inner"
+          )}
         >
-          {collapsed ? <PanelLeftOpenIcon size={15} /> : <PanelLeftCloseIcon size={15} />}
+          {collapsed ? <PanelLeftOpenIcon size={16} /> : <PanelLeftCloseIcon size={16} />}
         </button>
       </div>
 
-      {!collapsed && children}
+      {collapsed ? rail : children}
 
       {!collapsed && <div className="mt-auto shrink-0">{footer}</div>}
     </aside>

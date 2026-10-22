@@ -1,12 +1,12 @@
 import { useState } from "react"
 
-/** Sidebar collapsed flag, persisted in localStorage. Defaults to collapsed. */
+/** Sidebar collapsed flag, persisted in localStorage. Defaults to expanded (search lives there). */
 export function useSidebarCollapsed(): [boolean, () => void] {
   const [collapsed, setCollapsed] = useState(() => {
     try {
-      return localStorage.getItem("sidebar-collapsed") !== "false"
+      return localStorage.getItem("sidebar-collapsed") === "true"
     } catch {
-      return true
+      return false
     }
   })
 

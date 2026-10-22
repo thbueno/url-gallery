@@ -18,6 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { GripVerticalIcon, InfoIcon, PencilIcon, PinIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
+import { navRowVariants } from "@/components/gallery/NavRow"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +51,9 @@ interface CategoryFilterProps {
   onAddTag: (name: string) => Promise<void>
   onReorderTags: (order: string[]) => void
 }
+
+const sectionLabelClass =
+  "px-2.5 pb-1.5 pt-4 text-[length:var(--text-xs)] font-medium uppercase tracking-[0.06em] text-muted-foreground"
 
 const PINNED_ZONE_ID = "pinned-zone"
 const TAGS_ZONE_ID = "tags-zone"
@@ -101,10 +105,10 @@ function TagRow({
     <div
       ref={setNodeRef}
       style={style}
-      className={cn("group relative flex items-center", isDragging && "z-10 opacity-70")}
+      className={cn("group/row relative", isDragging && "z-10 opacity-70")}
     >
       {isEditing ? (
-        <div ref={editRowRef} className="flex min-w-0 flex-1 items-center gap-1 py-1">
+        <div ref={editRowRef} className="flex min-w-0 flex-1 items-center gap-1.5 py-0.5 pl-1">
           <Input
             ref={editInputRef}
             value={editValue}
@@ -120,16 +124,16 @@ function TagRow({
               onCommitEdit()
             }}
             disabled={busy}
-            className="h-6 min-w-0 flex-1 px-1.5 text-xs"
+            className="h-8 min-w-0 flex-1 rounded-inner border-border bg-surface-inner px-2 text-sm shadow-xs"
           />
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <button
                 type="button"
                 aria-label={`Delete ${tag.name}`}
-                className="shrink-0 text-muted-foreground hover:text-destructive"
+                className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-surface-tertiary hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <Trash2Icon size={12} />
+                <Trash2Icon size={14} />
               </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -156,28 +160,28 @@ function TagRow({
         <>
           <button
             type="button"
+            onClick={onToggle}
+            aria-current={isActive ? "true" : undefined}
+            className={cn(navRowVariants({ active: isActive }), "pr-9")}
+          >
+            <span className="min-w-0 flex-1 truncate">{tag.name}</span>
+            <span className="shrink-0 text-xs font-normal tabular-nums transition-opacity group-focus-within/row:opacity-0 group-hover/row:opacity-0">
+              {tag.count}
+            </span>
+          </button>
+
+          {/* Drag handle: sits in the row's left padding, shown on hover */}
+          <button
+            type="button"
             {...attributes}
             {...listeners}
             aria-label={`Reorder ${tag.name}`}
-            className="flex size-4 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity group-hover:opacity-40 hover:!opacity-100 active:cursor-grabbing"
+            className="absolute inset-y-1 left-0 flex w-3 cursor-grab items-center justify-center rounded-sm text-muted-foreground opacity-0 outline-none transition-opacity focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover/row:opacity-60 hover:!opacity-100 active:cursor-grabbing"
           >
-            <GripVerticalIcon size={11} />
+            <GripVerticalIcon className="size-2.5" />
           </button>
 
-          <button
-            type="button"
-            onClick={onToggle}
-            className={cn(
-              "flex min-w-0 flex-1 items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
-              isActive
-                ? "bg-accent font-medium text-accent-foreground"
-                : "text-sidebar-foreground hover:bg-accent/60"
-            )}
-          >
-            <span className="min-w-0 truncate pr-9">{tag.name}</span>
-          </button>
-
-          {/* Edit button */}
+          {/* Edit button (replaces the count while the row is hovered) */}
           <button
             type="button"
             onClick={(e) => {
@@ -185,12 +189,12 @@ function TagRow({
               onStartEdit()
             }}
             aria-label={`Edit ${tag.name}`}
-            className="absolute right-7 flex size-4 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100"
+            className="absolute right-8 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-[opacity,color,background-color] duration-150 hover:bg-surface-tertiary hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover/row:opacity-100"
           >
-            <PencilIcon size={10} />
+            <PencilIcon className="size-3.5" />
           </button>
 
-          {/* Pin button */}
+          {/* Pin toggle: always visible while pinned, otherwise on hover */}
           <button
             type="button"
             onClick={(e) => {
@@ -198,14 +202,15 @@ function TagRow({
               onTogglePin()
             }}
             aria-label={pinned ? `Unpin ${tag.name}` : `Pin ${tag.name}`}
+            aria-pressed={pinned}
             className={cn(
-              "absolute right-1.5 flex size-4 items-center justify-center rounded transition-opacity",
+              "absolute right-1.5 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md outline-none transition-[opacity,color,background-color] duration-150 hover:bg-surface-tertiary hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring",
               pinned
-                ? "opacity-100 text-foreground"
-                : "opacity-0 group-hover:opacity-60 text-muted-foreground hover:!opacity-100"
+                ? "text-foreground opacity-100"
+                : "text-muted-foreground opacity-0 group-hover/row:opacity-100"
             )}
           >
-            <PinIcon size={10} className={cn(pinned && "fill-foreground")} />
+            <PinIcon className={cn("size-3.5", pinned && "fill-current")} />
           </button>
         </>
       )}
@@ -216,7 +221,7 @@ function TagRow({
 function TagZone({ id, children }: { id: string; children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id })
   return (
-    <div ref={setNodeRef} className="flex flex-col gap-1">
+    <div ref={setNodeRef} className="flex flex-col gap-0.5">
       {children}
     </div>
   )
@@ -349,58 +354,9 @@ export function CategoryFilter({
   }
 
   return (
-    <nav className="flex flex-col gap-1 px-2 pb-4">
-      <div className="mb-1 flex items-center justify-between px-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Tags
-        </p>
-        <button
-          type="button"
-          onClick={startAdd}
-          aria-label="Add tag"
-          className="flex size-4 items-center justify-center rounded text-muted-foreground hover:text-foreground"
-        >
-          <PlusIcon size={11} />
-        </button>
-      </div>
-
-      {adding && (
-        <div className="mb-1 flex items-center gap-1 px-2">
-          <Input
-            ref={addInputRef}
-            value={addValue}
-            onChange={(e) => setAddValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commitAdd()
-              if (e.key === "Escape") setAdding(false)
-            }}
-            onBlur={commitAdd}
-            disabled={busy}
-            placeholder="New tag name…"
-            className="h-6 flex-1 px-1.5 text-xs"
-          />
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => onSelect([])}
-        className={cn(
-          "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
-          activeTags.length === 0
-            ? "bg-accent font-medium text-accent-foreground"
-            : "text-sidebar-foreground hover:bg-accent/60"
-        )}
-      >
-        <span>All</span>
-      </button>
-
+    <nav aria-label="Tags" className="flex flex-col gap-0.5 px-0.5 pb-2">
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        {pinnedTagRows.length > 0 && (
-          <p className="mb-1 mt-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Pinned
-          </p>
-        )}
+        {pinnedTagRows.length > 0 && <p className={sectionLabelClass}>Pinned</p>}
         <SortableContext
           items={pinnedTagRows.map((t) => t.name)}
           strategy={verticalListSortingStrategy}
@@ -428,11 +384,36 @@ export function CategoryFilter({
           </TagZone>
         </SortableContext>
 
-        {pinnedTagRows.length > 0 && unpinnedTagRows.length > 0 && (
-          <p className="mb-1 mt-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Tags
-          </p>
+        <div className="flex items-center justify-between pr-1">
+          <p className={sectionLabelClass}>Tags</p>
+          <button
+            type="button"
+            onClick={startAdd}
+            aria-label="Add tag"
+            className="mt-3 flex size-6 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-surface-tertiary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <PlusIcon className="size-3.5" />
+          </button>
+        </div>
+
+        {adding && (
+          <div className="mb-1 flex items-center gap-1">
+            <Input
+              ref={addInputRef}
+              value={addValue}
+              onChange={(e) => setAddValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitAdd()
+                if (e.key === "Escape") setAdding(false)
+              }}
+              onBlur={commitAdd}
+              disabled={busy}
+              placeholder="New tag name…"
+              className="h-8 flex-1 rounded-inner border-border bg-surface-inner px-2 text-sm shadow-xs"
+            />
+          </div>
         )}
+
         <SortableContext
           items={unpinnedTagRows.map((t) => t.name)}
           strategy={verticalListSortingStrategy}
@@ -462,9 +443,9 @@ export function CategoryFilter({
       </DndContext>
 
       {showUncategorizedNotice && (
-        <div className="mt-3 flex items-start gap-1.5 rounded-md bg-muted/50 px-2 py-2">
-          <InfoIcon size={11} className="mt-0.5 shrink-0 text-muted-foreground/70" />
-          <p className="text-[10px] leading-snug text-muted-foreground">
+        <div className="mt-3 flex items-start gap-1.5 rounded-inner bg-surface-tertiary/50 px-2.5 py-2">
+          <InfoIcon className="mt-0.5 size-3 shrink-0 text-muted-foreground" />
+          <p className="text-[length:var(--text-xs)] leading-snug text-muted-foreground">
             {uncategorizedCount === totalCount
               ? "All sites are uncategorized — tags are auto-detected from OG tags and domain."
               : `${uncategorizedCount} site${uncategorizedCount !== 1 ? "s" : ""} couldn't be auto-tagged.`}

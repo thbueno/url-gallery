@@ -1,3 +1,4 @@
+import { DatabaseIcon } from "lucide-react"
 import { useRef } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -43,12 +44,13 @@ export function DataMenu({ onExport, onImportFile, onCopyForAI, className }: Dat
           <Button
             size="sm"
             variant="ghost"
-            className="h-7 flex-1 justify-start px-2 text-[length:var(--text-xs)] text-muted-foreground"
+            className="h-8 flex-1 justify-start gap-2 rounded-inner px-2.5 text-sm text-muted-foreground hover:bg-surface-tertiary/60 hover:text-foreground"
           >
+            <DatabaseIcon />
             Data
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-44">
+        <DropdownMenuContent align="start" side="top" className="w-44">
           <DropdownMenuItem onSelect={onExport}>Export backup</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => importInputRef.current?.click()}>
             Import backup

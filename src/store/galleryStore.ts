@@ -1,5 +1,6 @@
 import { create } from "zustand"
 
+import { type SortOrder, sortSites } from "@/lib/sort-sites"
 import { type SavedSite, savedSiteStore } from "@/lib/store"
 
 export interface TagCount {
@@ -7,11 +8,11 @@ export interface TagCount {
   count: number
 }
 
-export type SortOrder = "savedAt" | "openCount"
-
 interface GalleryStore {
   sites: SavedSite[]
   tags: TagCount[]
+  /** Every saved site, ignoring search and tag filters. */
+  totalSites: number
   searchQuery: string
   activeTags: string[]
   sortOrder: SortOrder
@@ -25,14 +26,6 @@ interface GalleryStore {
   deleteSite: (id: number) => Promise<void>
   renameTag: (oldName: string, newName: string) => Promise<void>
   deleteTag: (name: string) => Promise<void>
-}
-
-function sortSites(sites: SavedSite[], order: SortOrder): SavedSite[] {
-  return [...sites].sort((a, b) => {
-    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-    if (order === "openCount") return b.openCount - a.openCount
-    return b.savedAt - a.savedAt
-  })
 }
 
 async function querySites(
@@ -52,7 +45,7 @@ async function querySites(
   return sortSites(results, order)
 }
 
-async function queryTags(): Promise<TagCount[]> {
+async function queryTags(): Promise<{ tags: TagCount[]; totalSites: number }> {
   const all = await savedSiteStore.getAll()
   const counts = new Map<string, number>()
   for (const s of all) {
@@ -60,14 +53,16 @@ async function queryTags(): Promise<TagCount[]> {
       counts.set(tag, (counts.get(tag) ?? 0) + 1)
     }
   }
-  return Array.from(counts.entries())
+  const tags = Array.from(counts.entries())
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
+  return { tags, totalSites: all.length }
 }
 
 export const useGalleryStore = create<GalleryStore>((set, get) => ({
   sites: [],
   tags: [],
+  totalSites: 0,
   searchQuery: "",
   activeTags: [],
   sortOrder: "savedAt",
@@ -75,11 +70,11 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
 
   async load() {
     set({ isLoading: true })
-    const [sites, tags] = await Promise.all([
+    const [sites, { tags, totalSites }] = await Promise.all([
       querySites(get().searchQuery, get().activeTags, get().sortOrder),
       queryTags(),
     ])
-    set({ sites, tags, isLoading: false })
+    set({ sites, tags, totalSites, isLoading: false })
   },
 
   async setSearchQuery(query) {
@@ -100,13 +95,13 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
     set({ sites, isLoading: false })
   },
 
-  async updateSiteTags(id, tags) {
-    await savedSiteStore.update(id, { tags })
-    const [sites, tagCounts] = await Promise.all([
+  async updateSiteTags(id, siteTags) {
+    await savedSiteStore.update(id, { tags: siteTags })
+    const [sites, { tags, totalSites }] = await Promise.all([
       querySites(get().searchQuery, get().activeTags, get().sortOrder),
       queryTags(),
     ])
-    set({ sites, tags: tagCounts })
+    set({ sites, tags, totalSites })
   },
 
   async togglePin(id, pinned) {
@@ -117,30 +112,30 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
 
   async deleteSite(id) {
     await savedSiteStore.delete(id)
-    const [sites, tags] = await Promise.all([
+    const [sites, { tags, totalSites }] = await Promise.all([
       querySites(get().searchQuery, get().activeTags, get().sortOrder),
       queryTags(),
     ])
-    set({ sites, tags })
+    set({ sites, tags, totalSites })
   },
 
   async renameTag(oldName, newName) {
     await savedSiteStore.renameTag(oldName, newName)
     const activeTags = get().activeTags.map((t) => (t === oldName ? newName : t))
-    const [sites, tags] = await Promise.all([
+    const [sites, { tags, totalSites }] = await Promise.all([
       querySites(get().searchQuery, activeTags, get().sortOrder),
       queryTags(),
     ])
-    set({ sites, tags, activeTags })
+    set({ sites, tags, totalSites, activeTags })
   },
 
   async deleteTag(name) {
     await savedSiteStore.deleteTag(name)
     const activeTags = get().activeTags.filter((t) => t !== name)
-    const [sites, tags] = await Promise.all([
+    const [sites, { tags, totalSites }] = await Promise.all([
       querySites(get().searchQuery, activeTags, get().sortOrder),
       queryTags(),
     ])
-    set({ sites, tags, activeTags })
+    set({ sites, tags, totalSites, activeTags })
   },
 }))
