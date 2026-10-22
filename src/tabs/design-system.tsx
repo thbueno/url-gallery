@@ -10,7 +10,20 @@ import {
   TagIcon,
   TypeIcon,
 } from "lucide-react"
+import { useState } from "react"
 
+import { BulkActionBar } from "@/components/gallery/BulkActionBar"
+import { DataMenu } from "@/components/gallery/DataMenu"
+import { GalleryEmptyState } from "@/components/gallery/GalleryEmptyState"
+import { GalleryHeader } from "@/components/gallery/GalleryHeader"
+import { GallerySkeleton } from "@/components/gallery/GallerySkeleton"
+import { PermissionBanner } from "@/components/gallery/PermissionBanner"
+import { PinnedTagChips } from "@/components/gallery/PinnedTagChips"
+import { SearchBox } from "@/components/gallery/SearchBox"
+import { SidebarFooter } from "@/components/gallery/SidebarFooter"
+import { SidebarShell } from "@/components/gallery/SidebarShell"
+import { TagList } from "@/components/gallery/TagList"
+import { ThemeToggle } from "@/components/gallery/ThemeToggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -238,6 +251,106 @@ function SiteCardSkeleton() {
   )
 }
 
+// ── Gallery feature components (real components, demo props) ──────────────────
+
+const DEMO_TAGS = ["Video", "Music", "Dev Tools", "Docs", "Uncategorized"]
+
+function GalleryComponentsDemo() {
+  const [query, setQuery] = useState("")
+  const [active, setActive] = useState<string[]>([])
+  const [collapsed, setCollapsed] = useState(false)
+  const [selected, setSelected] = useState(2)
+
+  return (
+    <>
+      <DemoBox label="GalleryHeader — SearchBox + PinnedTagChips + select toggle">
+        <GalleryHeader
+          className="w-full"
+          start={<SearchBox value={query} onChange={setQuery} />}
+          center={
+            <PinnedTagChips
+              pinnedTags={["Video", "Dev Tools"]}
+              activeTags={active}
+              onSelect={setActive}
+            />
+          }
+          end={
+            <Button variant="ghost" size="sm">
+              Select
+            </Button>
+          }
+        />
+      </DemoBox>
+
+      <DemoBox label="BulkActionBar (select mode)">
+        <BulkActionBar
+          selectedCount={selected}
+          tagNames={DEMO_TAGS}
+          onAddTag={() => setSelected((n) => n + 1)}
+          onRemoveTag={() => setSelected((n) => Math.max(0, n - 1))}
+          onDelete={() => setSelected(0)}
+          onClear={() => setSelected(0)}
+        />
+      </DemoBox>
+
+      <DemoBox label="PermissionBanner">
+        <PermissionBanner className="w-full" onDismiss={() => {}} onGranted={() => {}} />
+      </DemoBox>
+
+      <DemoBox label="GalleryEmptyState — no results / no sites">
+        <GalleryEmptyState
+          className="w-72"
+          searchQuery="figma"
+          activeTags={[]}
+          onClearSearch={() => {}}
+        />
+        <GalleryEmptyState
+          className="w-72"
+          searchQuery=""
+          activeTags={[]}
+          onClearSearch={() => {}}
+        />
+      </DemoBox>
+
+      <DemoBox label="GallerySkeleton">
+        <GallerySkeleton className="w-full" cols={3} />
+      </DemoBox>
+
+      <DemoBox
+        label="SidebarShell — SidebarFooter + DataMenu + ThemeToggle"
+        className="items-start"
+      >
+        <SidebarShell
+          className="h-72"
+          collapsed={collapsed}
+          onToggleCollapsed={() => setCollapsed((c) => !c)}
+          footer={
+            <SidebarFooter status="Backup downloaded">
+              <DataMenu onExport={() => {}} onImportFile={() => {}} onCopyForAI={() => {}} />
+              <ThemeToggle className="ml-auto" />
+            </SidebarFooter>
+          }
+        >
+          <TagList
+            className="min-h-0 flex-1"
+            tags={DEMO_TAGS.map((name, i) => ({ name, count: i + 1 }))}
+            activeTags={active}
+            pinnedTags={["Video"]}
+            tagOrder={DEMO_TAGS}
+            totalCount={15}
+            onSelect={setActive}
+            onTogglePinTag={() => {}}
+            onRenameTag={async () => {}}
+            onDeleteTag={async () => {}}
+            onAddTag={async () => {}}
+            onReorderTags={() => {}}
+          />
+        </SidebarShell>
+      </DemoBox>
+    </>
+  )
+}
+
 // ── Sidebar nav ───────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
@@ -251,6 +364,7 @@ const NAV_ITEMS = [
   { id: "feedback", label: "Feedback", icon: GridIcon },
   { id: "dropdown", label: "Dropdown Menu", icon: ChevronDownIcon },
   { id: "gallery-preview", label: "Gallery Preview", icon: GridIcon },
+  { id: "gallery-components", label: "Gallery Components", icon: LayersIcon },
 ]
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -596,6 +710,14 @@ export default function DesignSystem() {
                 <SiteCardSkeleton />
               </div>
             </DemoBox>
+          </Section>
+
+          {/* ── Gallery feature components ────────────────────────── */}
+          <Section id="gallery-components" label="Patterns" title="Gallery — Feature Components">
+            <p className="text-[var(--text-sm)] text-muted-foreground">
+              The real components the gallery page is composed from, rendered with demo props.
+            </p>
+            <GalleryComponentsDemo />
           </Section>
         </div>
       </main>
