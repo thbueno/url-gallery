@@ -11,7 +11,7 @@ interface SearchBoxProps {
 
 export function SearchBox({ value, onChange, className }: SearchBoxProps) {
   return (
-    <div className={cn("relative w-56", className)}>
+    <div className={cn("relative", className)}>
       <SearchIcon
         size={16}
         className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"

@@ -1,5 +1,6 @@
 import { useState } from "react"
 
+import { UNCATEGORIZED } from "@/lib/categorizer"
 import type { SavedSite } from "@/lib/store"
 import { useGalleryStore } from "@/store/galleryStore"
 
@@ -47,22 +48,24 @@ export function useBulkSelection() {
     setSelectMode(false)
   }
 
+  function selectedSites() {
+    return sites.filter((s) => s.id !== undefined && selectedIds.has(s.id))
+  }
+
   async function addTagToSelected(tag: string) {
-    const targets = sites.filter((s) => s.id !== undefined && selectedIds.has(s.id))
-    for (const site of targets) {
+    for (const site of selectedSites()) {
       if (site.id === undefined) continue
       if (site.tags.includes(tag)) continue
-      const newTags = [...site.tags.filter((t) => t !== "Uncategorized"), tag]
+      const newTags = [...site.tags.filter((t) => t !== UNCATEGORIZED), tag]
       await updateSiteTags(site.id, newTags)
     }
   }
 
   async function removeTagFromSelected(tag: string) {
-    const targets = sites.filter((s) => s.id !== undefined && selectedIds.has(s.id))
-    for (const site of targets) {
+    for (const site of selectedSites()) {
       if (site.id === undefined) continue
       let newTags = site.tags.filter((t) => t !== tag)
-      if (newTags.length === 0) newTags = ["Uncategorized"]
+      if (newTags.length === 0) newTags = [UNCATEGORIZED]
       await updateSiteTags(site.id, newTags)
     }
   }

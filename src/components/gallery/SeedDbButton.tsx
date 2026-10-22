@@ -33,7 +33,7 @@ export function SeedDbButton({ onSeeded, className }: SeedDbButtonProps) {
           variant="ghost"
           disabled={isSeeding}
           className={cn(
-            "h-7 flex-1 justify-start px-2 text-[11px] text-muted-foreground",
+            "h-7 justify-start px-2 text-[length:var(--text-xs)] text-muted-foreground",
             className
           )}
         >

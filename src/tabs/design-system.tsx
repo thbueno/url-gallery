@@ -15,11 +15,13 @@ import { useState } from "react"
 import { BulkActionBar } from "@/components/gallery/BulkActionBar"
 import { DataMenu } from "@/components/gallery/DataMenu"
 import { GalleryEmptyState } from "@/components/gallery/GalleryEmptyState"
+import { GalleryGrid } from "@/components/gallery/GalleryGrid"
 import { GalleryHeader } from "@/components/gallery/GalleryHeader"
 import { GallerySkeleton } from "@/components/gallery/GallerySkeleton"
 import { PermissionBanner } from "@/components/gallery/PermissionBanner"
 import { PinnedTagChips } from "@/components/gallery/PinnedTagChips"
 import { SearchBox } from "@/components/gallery/SearchBox"
+import { SeedDbButton } from "@/components/gallery/SeedDbButton"
 import { SidebarFooter } from "@/components/gallery/SidebarFooter"
 import { SidebarShell } from "@/components/gallery/SidebarShell"
 import { TagList } from "@/components/gallery/TagList"
@@ -47,6 +49,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
 
 // ── Token display helpers ────────────────────────────────────────────────────
@@ -255,6 +258,18 @@ function SiteCardSkeleton() {
 
 const DEMO_TAGS = ["Video", "Music", "Dev Tools", "Docs", "Uncategorized"]
 
+const DEMO_GRID_SITES: SavedSite[] = DEMO_SITES.map((site, i) => ({
+  id: i + 1,
+  url: `https://${site.domain}`,
+  title: site.title,
+  favicon: null,
+  thumb: null,
+  tags: [DEMO_TAGS[i % DEMO_TAGS.length] ?? "Uncategorized"],
+  savedAt: 0,
+  openCount: 0,
+  pinned: i === 0,
+}))
+
 function GalleryComponentsDemo() {
   const [query, setQuery] = useState("")
   const [active, setActive] = useState<string[]>([])
@@ -266,9 +281,11 @@ function GalleryComponentsDemo() {
       <DemoBox label="GalleryHeader — SearchBox + PinnedTagChips + select toggle">
         <GalleryHeader
           className="w-full"
-          start={<SearchBox value={query} onChange={setQuery} />}
+          start={<SearchBox className="w-56" value={query} onChange={setQuery} />}
+          endClassName="w-56 shrink-0"
           center={
             <PinnedTagChips
+              className="max-w-xl shrink-0"
               pinnedTags={["Video", "Dev Tools"]}
               activeTags={active}
               onSelect={setActive}
@@ -284,6 +301,7 @@ function GalleryComponentsDemo() {
 
       <DemoBox label="BulkActionBar (select mode)">
         <BulkActionBar
+          className="max-w-2xl shrink-0"
           selectedCount={selected}
           tagNames={DEMO_TAGS}
           onAddTag={() => setSelected((n) => n + 1)}
@@ -310,6 +328,29 @@ function GalleryComponentsDemo() {
           activeTags={[]}
           onClearSearch={() => {}}
         />
+      </DemoBox>
+
+      <DemoBox label="GalleryGrid — virtualized cards (scrolls inside a fixed height)">
+        <GalleryGrid
+          className="h-96 w-full"
+          sites={DEMO_GRID_SITES}
+          isLoading={false}
+          searchQuery=""
+          activeTags={active}
+          availableTags={DEMO_TAGS}
+          selectMode={false}
+          selectedIds={new Set()}
+          onOpenSite={() => {}}
+          onTagsChange={() => {}}
+          onPinToggle={() => {}}
+          onDeleteSite={() => {}}
+          onToggleSelect={() => {}}
+          onClearSearch={() => {}}
+        />
+      </DemoBox>
+
+      <DemoBox label="SeedDbButton (dev only — confirming inserts synthetic sites into the local DB)">
+        <SeedDbButton className="flex-none" onSeeded={async () => {}} />
       </DemoBox>
 
       <DemoBox label="GallerySkeleton">

@@ -14,7 +14,7 @@ interface DataMenuProps {
   onExport: () => void | Promise<void>
   onImportFile: (file: File) => void | Promise<void>
   onCopyForAI: () => void | Promise<void>
-  /** Applied to the trigger button. */
+  /** Applied to the root element. */
   className?: string
 }
 
@@ -30,7 +30,7 @@ export function DataMenu({ onExport, onImportFile, onCopyForAI, className }: Dat
   }
 
   return (
-    <>
+    <div className={cn("flex", className)}>
       <input
         ref={importInputRef}
         type="file"
@@ -43,10 +43,7 @@ export function DataMenu({ onExport, onImportFile, onCopyForAI, className }: Dat
           <Button
             size="sm"
             variant="ghost"
-            className={cn(
-              "h-7 flex-1 justify-start px-2 text-[11px] text-muted-foreground",
-              className
-            )}
+            className="h-7 flex-1 justify-start px-2 text-[length:var(--text-xs)] text-muted-foreground"
           >
             Data
           </Button>
@@ -60,6 +57,6 @@ export function DataMenu({ onExport, onImportFile, onCopyForAI, className }: Dat
           <DropdownMenuItem onSelect={onCopyForAI}>Copy for AI</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </>
+    </div>
   )
 }

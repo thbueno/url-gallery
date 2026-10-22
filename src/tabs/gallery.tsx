@@ -76,11 +76,14 @@ export default function GalleryPage() {
         footer={
           <SidebarFooter status={backup.status}>
             <DataMenu
+              className="flex-1 basis-4"
               onExport={backup.exportBackup}
               onImportFile={backup.importFile}
               onCopyForAI={backup.copyForAI}
             />
-            {process.env.NODE_ENV === "development" ? <SeedDbButton onSeeded={load} /> : null}
+            {process.env.NODE_ENV === "development" ? (
+              <SeedDbButton className="flex-1" onSeeded={load} />
+            ) : null}
             <ThemeToggle className="ml-auto" />
           </SidebarFooter>
         }
@@ -103,10 +106,12 @@ export default function GalleryPage() {
 
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <GalleryHeader
-          start={<SearchBox value={searchQuery} onChange={setSearchQuery} />}
+          start={<SearchBox className="w-56" value={searchQuery} onChange={setSearchQuery} />}
+          endClassName="w-56 shrink-0"
           center={
             selection.selectMode ? (
               <BulkActionBar
+                className="max-w-2xl shrink-0"
                 selectedCount={selection.selectedIds.size}
                 tagNames={tagList.mergedTags.map((t) => t.name)}
                 onAddTag={selection.addTagToSelected}
@@ -116,6 +121,7 @@ export default function GalleryPage() {
               />
             ) : (
               <PinnedTagChips
+                className="max-w-xl shrink-0"
                 pinnedTags={pinnedTags}
                 activeTags={activeTags}
                 onSelect={setActiveTags}

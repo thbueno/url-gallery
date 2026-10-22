@@ -1,6 +1,21 @@
 import { BookmarkIcon, PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react"
 
+import { cva } from "class-variance-authority"
+
 import { cn } from "@/lib/utils"
+
+const sidebarVariants = cva(
+  "flex shrink-0 flex-col overflow-hidden rounded-card bg-card transition-[width] duration-200",
+  {
+    variants: {
+      collapsed: {
+        true: "w-10",
+        false: "w-60",
+      },
+    },
+    defaultVariants: { collapsed: false },
+  }
+)
 
 interface SidebarShellProps {
   collapsed: boolean
@@ -20,14 +35,7 @@ export function SidebarShell({
   className,
 }: SidebarShellProps) {
   return (
-    <aside
-      className={cn(
-        "flex shrink-0 flex-col overflow-hidden rounded-card bg-card",
-        "transition-[width] duration-200",
-        collapsed ? "w-10" : "w-60",
-        className
-      )}
-    >
+    <aside className={cn(sidebarVariants({ collapsed }), className)}>
       <div className="flex shrink-0 items-center gap-2 px-2 py-5">
         {!collapsed && (
           <>

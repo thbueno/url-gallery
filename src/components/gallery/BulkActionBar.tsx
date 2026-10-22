@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { UNCATEGORIZED } from "@/lib/categorizer"
 import { cn } from "@/lib/utils"
 
 interface BulkActionBarProps {
@@ -71,12 +72,12 @@ export function BulkActionBar({
   className,
 }: BulkActionBarProps) {
   const none = selectedCount === 0
-  const assignable = tagNames.filter((name) => name !== "Uncategorized")
+  const assignable = tagNames.filter((name) => name !== UNCATEGORIZED)
 
   return (
     <div
       className={cn(
-        "flex min-w-0 max-w-2xl shrink-0 items-center gap-1 rounded-full border border-border bg-background px-2 py-1.5",
+        "flex min-w-0 items-center gap-1 rounded-full border border-border bg-background px-2 py-1.5",
         className
       )}
     >
