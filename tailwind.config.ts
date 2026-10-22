@@ -38,6 +38,19 @@ const config: Config = {
           foreground: "hsl(var(--destructive-foreground) / <alpha-value>)",
         },
         border: "hsl(var(--border) / <alpha-value>)",
+        "border-hover": "hsl(var(--border-hover) / <alpha-value>)",
+        separator: "hsl(var(--separator) / <alpha-value>)",
+        surface: {
+          section: "hsl(var(--surface-section) / <alpha-value>)",
+          inner: "hsl(var(--surface-inner) / <alpha-value>)",
+          tertiary: "hsl(var(--surface-tertiary) / <alpha-value>)",
+          hover: "hsl(var(--surface-hover) / <alpha-value>)",
+        },
+        tag: "hsl(var(--tag-bg) / <alpha-value>)",
+        "accent-soft": {
+          DEFAULT: "hsl(var(--accent-soft) / <alpha-value>)",
+          foreground: "hsl(var(--accent-soft-foreground) / <alpha-value>)",
+        },
         input: "hsl(var(--input) / <alpha-value>)",
         ring: "hsl(var(--ring) / <alpha-value>)",
         chart: {
@@ -59,11 +72,28 @@ const config: Config = {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
+        lg: "var(--radius-lg)",
         md: "calc(var(--radius) - 2px)",
         sm: "var(--radius-sm)",
         xl: "var(--radius-xl)",
         card: "var(--radius-card)",
+        inner: "var(--radius-inner)",
+      },
+      boxShadow: {
+        "2xs": "var(--shadow-2xs)",
+        xs: "var(--shadow-xs)",
+        sm: "var(--shadow-sm)",
+        DEFAULT: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        pop: "var(--shadow-pop)",
+        primary: "var(--shadow-primary)",
+      },
+      backgroundImage: {
+        "primary-gradient":
+          "linear-gradient(180deg, hsl(var(--primary-gradient-from)), hsl(var(--primary-gradient-to)))",
+        "primary-gradient-hover":
+          "linear-gradient(180deg, hsl(var(--primary-gradient-hover-from)), hsl(var(--primary-gradient-hover-to)))",
       },
       fontFamily: {
         sans: ["var(--font-sans)"],

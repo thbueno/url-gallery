@@ -62,8 +62,8 @@ Biome. Run `pnpm run lint` before committing. Pre-commit hook (lint-staged + sim
 Use the `/shadcn` skill to install shadcn/ui primitives into `src/components/ui/`. Never hand-write a component that shadcn already provides.
 
 - Style: **New York**
-- Base color: **Zinc**
-- Border radius: **0.5rem**
+- Base color: **neutral greys** with one blue accent (Board Blue, ADR 0010; supersedes Zinc)
+- Border radius: **0.875rem** base (`--radius`); the rest of the scale derives from it (sm 0.6r, lg 1.35r, xl 1.75r, card 1.5r, inner 1.5r − 6px)
 - Dark mode: OS preference by default (`@media (prefers-color-scheme: dark)` in `src/style.css`), overridable by the sidebar toggle (`src/components/gallery/ThemeToggle.tsx`), which sets `html.dark`/`html.light` and persists the choice via `src/store/themeStore.ts` (localStorage, shared across all extension pages since they're same-origin)
 
 ### Design tokens — single source of truth (ADR 0007)
@@ -154,6 +154,7 @@ PermissionGate, Grid, Search, and CategoryFilter: verify manually in v1.
 - **ADR 0005** — shadcn New York + Zinc
 - **ADR 0006** — Zod message contracts
 - **ADR 0007** — single-source design tokens (`src/style.css`) + dev-only design-system page + component modularity
+- **ADR 0010** — BoardUI-based visual language (Board Blue, Inter, Soft radius, neutral tags, one accent)
 
 ## Dev tooling
 

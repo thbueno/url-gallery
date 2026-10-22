@@ -14,6 +14,8 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
         outline: "text-foreground",
+        // Neutral tag chip: one style for every tag, no hue (ADR 0010).
+        tag: "rounded-sm border-transparent bg-tag px-2.5 py-1 text-xs font-medium leading-none text-foreground",
       },
     },
     defaultVariants: {

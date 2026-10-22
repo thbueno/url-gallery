@@ -10,10 +10,18 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        // Filled gradient primary (Board Blue). CSS can't transition gradients, so the
+        // hover gradient fades in from a ::before layer. Stops come from --primary-gradient-*.
+        gradient: [
+          "relative isolate overflow-hidden bg-primary-gradient text-primary-foreground shadow-primary",
+          "before:absolute before:inset-0 before:-z-10 before:bg-primary-gradient-hover before:opacity-0 before:transition-opacity before:duration-150 before:ease-out before:content-['']",
+          "hover:before:opacity-100",
+        ].join(" "),
+        destructive: "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+          "border border-input bg-background shadow-xs hover:border-border-hover hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "border border-input bg-secondary text-secondary-foreground shadow-xs hover:border-border-hover hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },

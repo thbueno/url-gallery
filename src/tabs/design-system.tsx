@@ -73,6 +73,26 @@ const colorTokens = [
   { token: "--ring", label: "Ring" },
   { token: "--sidebar", label: "Sidebar" },
   { token: "--sidebar-border", label: "Sidebar Border" },
+  { token: "--surface-section", label: "Surface Section" },
+  { token: "--surface-inner", label: "Surface Inner" },
+  { token: "--surface-tertiary", label: "Surface Tertiary" },
+  { token: "--surface-hover", label: "Surface Hover" },
+  { token: "--tag-bg", label: "Tag BG" },
+  { token: "--border-hover", label: "Border Hover" },
+  { token: "--separator", label: "Separator" },
+  { token: "--accent-soft", label: "Accent Soft" },
+  { token: "--accent-soft-foreground", label: "Accent Soft FG" },
+  { token: "--primary-gradient-from", label: "Gradient From" },
+  { token: "--primary-gradient-to", label: "Gradient To" },
+]
+
+const shadowTokens = [
+  { token: "--shadow-xs", label: "xs", className: "shadow-xs" },
+  { token: "--shadow-sm", label: "sm", className: "shadow-sm" },
+  { token: "--shadow-md", label: "md", className: "shadow-md" },
+  { token: "--shadow-lg", label: "lg", className: "shadow-lg" },
+  { token: "--shadow-pop", label: "pop", className: "shadow-pop" },
+  { token: "--shadow-primary", label: "primary", className: "shadow-primary" },
 ]
 
 const typeScale = [
@@ -86,11 +106,12 @@ const typeScale = [
 ]
 
 const radiusTokens = [
-  { token: "--radius-sm", label: "sm · 4px", className: "rounded-sm" },
-  { token: "--radius", label: "base · 8px", className: "rounded-lg" },
-  { token: "--radius-lg", label: "lg · 12px", className: "rounded-xl" },
-  { token: "--radius-xl", label: "xl · 16px", className: "rounded-[var(--radius-xl)]" },
-  { token: "--radius-card", label: "card · 12px", className: "rounded-card" },
+  { token: "--radius-sm", label: "sm · 0.6r", className: "rounded-sm" },
+  { token: "--radius", label: "base · r", className: "rounded-[var(--radius)]" },
+  { token: "--radius-lg", label: "lg · 1.35r", className: "rounded-lg" },
+  { token: "--radius-xl", label: "xl · 1.75r", className: "rounded-xl" },
+  { token: "--radius-card", label: "card · 1.5r", className: "rounded-card" },
+  { token: "--radius-inner", label: "inner · 1.5r − inset", className: "rounded-inner" },
 ]
 
 // ── Section shell ────────────────────────────────────────────────────────────
@@ -198,7 +219,7 @@ const DEMO_SITES = [
 
 function SiteCardPreview({ title, domain, category, favicon, thumbColor }: (typeof DEMO_SITES)[0]) {
   return (
-    <div className="group flex w-[var(--card-min-width)] flex-col overflow-hidden rounded-card border bg-card shadow-sm transition-all duration-150 hover:shadow-md hover:ring-1 hover:ring-[hsl(var(--card-hover-ring))]">
+    <div className="group flex w-[var(--card-min-width)] flex-col overflow-hidden rounded-card border bg-card shadow-sm transition-all duration-150 hover:shadow-md hover:ring-1 hover:ring-border-hover">
       {/* Thumbnail area */}
       <div className={cn("relative h-32 bg-gradient-to-br", thumbColor)}>
         <div className="absolute inset-0 flex items-center justify-center opacity-10">
@@ -398,6 +419,7 @@ const NAV_ITEMS = [
   { id: "colors", label: "Colors", icon: PaletteIcon },
   { id: "typography", label: "Typography", icon: TypeIcon },
   { id: "radius", label: "Radius", icon: LayersIcon },
+  { id: "elevation", label: "Elevation", icon: LayersIcon },
   { id: "buttons", label: "Buttons", icon: GridIcon },
   { id: "badges", label: "Badges", icon: BookmarkIcon },
   { id: "inputs", label: "Inputs", icon: TypeIcon },
@@ -505,6 +527,11 @@ export default function DesignSystem() {
                 </div>
               ))}
             </div>
+            <DemoBox label="Font family — sans (Inter, bundled locally)">
+              <span className="font-sans text-[var(--text-base)] text-foreground">
+                The quick brown fox jumps over the lazy dog 0123456789
+              </span>
+            </DemoBox>
             <DemoBox label="Font family — display (headings)">
               <span className="font-display text-xl font-semibold text-foreground">
                 URL Gallery — save the web you love
@@ -534,9 +561,45 @@ export default function DesignSystem() {
             </div>
           </Section>
 
+          {/* ── Foundation: Elevation ─────────────────────────────── */}
+          <Section id="elevation" label="Foundation" title="Elevation">
+            <div className="flex flex-wrap gap-6">
+              {shadowTokens.map(({ token, label, className: cls }) => (
+                <div key={token} className="flex flex-col items-center gap-2">
+                  <div
+                    className={cn(
+                      "size-16 rounded-card",
+                      token === "--shadow-primary"
+                        ? "bg-primary-gradient"
+                        : "border bg-surface-inner",
+                      cls
+                    )}
+                  />
+                  <div className="text-center">
+                    <p className="font-mono text-[var(--text-xs)] font-medium text-foreground">
+                      {label}
+                    </p>
+                    <p className="font-mono text-[var(--text-xs)] text-muted-foreground">{token}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <DemoBox label="Surfaces — section holds an inner tile">
+              <div className="rounded-card bg-surface-section p-3">
+                <div className="rounded-inner bg-surface-inner p-4 text-[var(--text-sm)] text-foreground">
+                  Inner surface on a section surface
+                </div>
+              </div>
+              <div className="rounded-card bg-surface-tertiary px-4 py-3 text-[var(--text-sm)] text-foreground">
+                Tertiary surface
+              </div>
+            </DemoBox>
+          </Section>
+
           {/* ── Components: Buttons ───────────────────────────────── */}
           <Section id="buttons" label="Components" title="Button">
             <DemoBox label="Variants">
+              <Button variant="gradient">Gradient</Button>
               <Button variant="default">Default</Button>
               <Button variant="secondary">Secondary</Button>
               <Button variant="outline">Outline</Button>
@@ -553,6 +616,10 @@ export default function DesignSystem() {
               </Button>
             </DemoBox>
             <DemoBox label="With icon">
+              <Button variant="gradient">
+                <BookmarkIcon />
+                Save site
+              </Button>
               <Button>
                 <BookmarkIcon />
                 Save site
@@ -563,6 +630,9 @@ export default function DesignSystem() {
               </Button>
             </DemoBox>
             <DemoBox label="States">
+              <Button variant="gradient" disabled>
+                Disabled gradient
+              </Button>
               <Button disabled>Disabled</Button>
               <Button variant="outline" disabled>
                 Disabled outline
@@ -577,15 +647,29 @@ export default function DesignSystem() {
               <Badge variant="secondary">Secondary</Badge>
               <Badge variant="outline">Outline</Badge>
               <Badge variant="destructive">Destructive</Badge>
+              <Badge variant="tag">Tag</Badge>
             </DemoBox>
-            <DemoBox label="Category tags (primary use-case)">
-              {["Tools", "Reading", "Dev", "Design", "Productivity", "Reference", "Video"].map(
-                (cat) => (
-                  <Badge key={cat} variant="secondary">
-                    {cat}
-                  </Badge>
-                )
-              )}
+            <DemoBox label="Neutral tag chips (one style, no hue)">
+              {[
+                "Tools",
+                "Reading",
+                "Dev",
+                "Design",
+                "Productivity",
+                "Reference",
+                "Uncategorized",
+              ].map((cat) => (
+                <Badge key={cat} variant="tag">
+                  {cat}
+                </Badge>
+              ))}
+            </DemoBox>
+            <DemoBox label="Neutral tag chips on a section surface" className="bg-surface-section">
+              {["Tools", "Reading", "Dev"].map((cat) => (
+                <Badge key={cat} variant="tag">
+                  {cat}
+                </Badge>
+              ))}
             </DemoBox>
           </Section>
 
