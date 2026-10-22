@@ -10,17 +10,22 @@ import { BulkActionBar } from "@/components/gallery/BulkActionBar"
 import { DataMenu } from "@/components/gallery/DataMenu"
 import { GalleryGrid } from "@/components/gallery/GalleryGrid"
 import { GalleryHeader } from "@/components/gallery/GalleryHeader"
+import { OverviewPlaceholder } from "@/components/gallery/OverviewPlaceholder"
 import { PermissionBanner } from "@/components/gallery/PermissionBanner"
 import { PinnedTagChips } from "@/components/gallery/PinnedTagChips"
 import { SearchBox } from "@/components/gallery/SearchBox"
 import { SeedDbButton } from "@/components/gallery/SeedDbButton"
+import { SelectModeButton } from "@/components/gallery/SelectModeButton"
 import { SidebarFooter } from "@/components/gallery/SidebarFooter"
+import { SidebarNav } from "@/components/gallery/SidebarNav"
+import { SidebarRail } from "@/components/gallery/SidebarRail"
 import { SidebarShell } from "@/components/gallery/SidebarShell"
+import { SortMenu } from "@/components/gallery/SortMenu"
 import { TagList } from "@/components/gallery/TagList"
 import { ThemeToggle } from "@/components/gallery/ThemeToggle"
-import { Button } from "@/components/ui/button"
 import { useBackupActions } from "@/hooks/useBackupActions"
 import { useBulkSelection } from "@/hooks/useBulkSelection"
+import { useGalleryPage } from "@/hooks/useGalleryPage"
 import { useGalleryTags } from "@/hooks/useGalleryTags"
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed"
 import { useSiteActions } from "@/hooks/useSiteActions"
@@ -34,7 +39,10 @@ export default function GalleryPage() {
   const activeTags = useGalleryStore((s) => s.activeTags)
   const isLoading = useGalleryStore((s) => s.isLoading)
   const searchQuery = useGalleryStore((s) => s.searchQuery)
+  const sortOrder = useGalleryStore((s) => s.sortOrder)
+  const totalSites = useGalleryStore((s) => s.totalSites)
   const load = useGalleryStore((s) => s.load)
+  const setSortOrder = useGalleryStore((s) => s.setSortOrder)
   const setSearchQuery = useGalleryStore((s) => s.setSearchQuery)
   const setActiveTags = useGalleryStore((s) => s.setActiveTags)
 
@@ -45,6 +53,7 @@ export default function GalleryPage() {
 
   const [showPermissionBanner, setShowPermissionBanner] = useState(false)
   const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed()
+  const { page, setPage, selectTags, changeSearch, navigate } = useGalleryPage()
 
   const tagList = useGalleryTags()
   const siteActions = useSiteActions()
@@ -68,26 +77,42 @@ export default function GalleryPage() {
   useSiteSavedRefresh(load)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+    <div className="flex h-screen gap-3 overflow-hidden bg-background p-3 text-foreground">
       <SidebarShell
         collapsed={sidebarCollapsed}
         onToggleCollapsed={toggleSidebar}
-        className="m-2"
+        rail={
+          <SidebarRail
+            page={page}
+            totalSites={totalSites}
+            onPageChange={setPage}
+            onSearch={toggleSidebar}
+          />
+        }
         footer={
           <SidebarFooter status={backup.status}>
-            <DataMenu
-              className="flex-1 basis-4"
-              onExport={backup.exportBackup}
-              onImportFile={backup.importFile}
-              onCopyForAI={backup.copyForAI}
-            />
-            {process.env.NODE_ENV === "development" ? (
-              <SeedDbButton className="flex-1" onSeeded={load} />
-            ) : null}
-            <ThemeToggle className="ml-auto" />
+            <div className="flex items-center gap-1">
+              <DataMenu
+                className="flex-1 basis-4"
+                onExport={backup.exportBackup}
+                onImportFile={backup.importFile}
+                onCopyForAI={backup.copyForAI}
+              />
+              {process.env.NODE_ENV === "development" ? (
+                <SeedDbButton className="flex-1" onSeeded={load} />
+              ) : null}
+            </div>
+            <ThemeToggle />
           </SidebarFooter>
         }
       >
+        <SearchBox value={searchQuery} onChange={changeSearch} />
+        <SidebarNav
+          className="px-0.5"
+          page={page}
+          totalSites={totalSites}
+          onPageChange={navigate}
+        />
         <TagList
           className="min-h-0 flex-1"
           tags={tagList.mergedTags}
@@ -95,7 +120,7 @@ export default function GalleryPage() {
           pinnedTags={pinnedTags}
           tagOrder={tagList.effectiveTagOrder}
           totalCount={tagList.totalCount}
-          onSelect={setActiveTags}
+          onSelect={selectTags}
           onTogglePinTag={togglePinTag}
           onRenameTag={tagList.rename}
           onDeleteTag={tagList.remove}
@@ -104,64 +129,67 @@ export default function GalleryPage() {
         />
       </SidebarShell>
 
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <GalleryHeader
-          start={<SearchBox className="w-56" value={searchQuery} onChange={setSearchQuery} />}
-          endClassName="w-56 shrink-0"
-          center={
-            selection.selectMode ? (
-              <BulkActionBar
-                className="max-w-2xl shrink-0"
-                selectedCount={selection.selectedIds.size}
-                tagNames={tagList.mergedTags.map((t) => t.name)}
-                onAddTag={selection.addTagToSelected}
-                onRemoveTag={selection.removeTagFromSelected}
-                onDelete={selection.deleteSelected}
-                onClear={selection.clearSelection}
-              />
-            ) : (
-              <PinnedTagChips
-                className="max-w-xl shrink-0"
-                pinnedTags={pinnedTags}
-                activeTags={activeTags}
-                onSelect={setActiveTags}
-              />
-            )
-          }
-          end={
-            <Button
-              variant={selection.selectMode ? "outline" : "ghost"}
-              size="sm"
-              onClick={selection.toggleSelectMode}
-            >
-              {selection.selectMode ? "Cancel" : "Select"}
-            </Button>
-          }
-        />
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        {page === "overview" ? (
+          <OverviewPlaceholder className="m-1" />
+        ) : (
+          <>
+            <GalleryHeader
+              className="px-4 pb-3 pt-2"
+              start={<SortMenu value={sortOrder} onChange={setSortOrder} />}
+              center={
+                selection.selectMode ? (
+                  <BulkActionBar
+                    className="max-w-2xl shrink-0"
+                    selectedCount={selection.selectedIds.size}
+                    tagNames={tagList.mergedTags.map((t) => t.name)}
+                    onAddTag={selection.addTagToSelected}
+                    onRemoveTag={selection.removeTagFromSelected}
+                    onDelete={selection.deleteSelected}
+                    onClear={selection.clearSelection}
+                  />
+                ) : (
+                  <PinnedTagChips
+                    className="max-w-xl shrink-0"
+                    pinnedTags={pinnedTags}
+                    activeTags={activeTags}
+                    onSelect={setActiveTags}
+                  />
+                )
+              }
+              end={
+                <SelectModeButton
+                  selectMode={selection.selectMode}
+                  onToggle={selection.toggleSelectMode}
+                />
+              }
+            />
 
-        {showPermissionBanner && (
-          <PermissionBanner
-            onDismiss={() => setShowPermissionBanner(false)}
-            onGranted={() => void backfillThumbnails(null)}
-          />
+            {showPermissionBanner && (
+              <PermissionBanner
+                onDismiss={() => setShowPermissionBanner(false)}
+                onGranted={() => void backfillThumbnails(null)}
+              />
+            )}
+
+            <GalleryGrid
+              className="min-h-0 flex-1"
+              sites={sites}
+              isLoading={isLoading}
+              searchQuery={searchQuery}
+              activeTags={activeTags}
+              availableTags={tagList.effectiveTagOrder}
+              selectMode={selection.selectMode}
+              selectedIds={selection.selectedIds}
+              onOpenSite={siteActions.openSite}
+              onTagsChange={siteActions.changeTags}
+              onPinToggle={siteActions.togglePinned}
+              onDeleteSite={siteActions.removeSite}
+              onToggleSelect={selection.toggleSelect}
+              onClearSearch={() => setSearchQuery("")}
+            />
+          </>
         )}
-
-        <GalleryGrid
-          className="min-h-0 flex-1"
-          sites={sites}
-          isLoading={isLoading}
-          searchQuery={searchQuery}
-          activeTags={activeTags}
-          availableTags={tagList.effectiveTagOrder}
-          selectMode={selection.selectMode}
-          selectedIds={selection.selectedIds}
-          onOpenSite={siteActions.openSite}
-          onTagsChange={siteActions.changeTags}
-          onPinToggle={siteActions.togglePinned}
-          onDeleteSite={siteActions.removeSite}
-          onToggleSelect={selection.toggleSelect}
-          onClearSearch={() => setSearchQuery("")}
-        />
       </main>
     </div>
   )

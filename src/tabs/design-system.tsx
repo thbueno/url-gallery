@@ -2,12 +2,18 @@ import "@/style.css"
 
 import {
   BookmarkIcon,
+  ChartNoAxesColumnIcon,
   ChevronDownIcon,
   ExternalLinkIcon,
   GridIcon,
   LayersIcon,
+  LayoutGridIcon,
   PaletteIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
+  PlusIcon,
   TagIcon,
+  Trash2Icon,
   TypeIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -18,12 +24,21 @@ import { GalleryEmptyState } from "@/components/gallery/GalleryEmptyState"
 import { GalleryGrid } from "@/components/gallery/GalleryGrid"
 import { GalleryHeader } from "@/components/gallery/GalleryHeader"
 import { GallerySkeleton } from "@/components/gallery/GallerySkeleton"
+import { HeaderButton } from "@/components/gallery/HeaderButton"
+import { NavRow } from "@/components/gallery/NavRow"
+import { OverviewPlaceholder } from "@/components/gallery/OverviewPlaceholder"
 import { PermissionBanner } from "@/components/gallery/PermissionBanner"
 import { PinnedTagChips } from "@/components/gallery/PinnedTagChips"
 import { SearchBox } from "@/components/gallery/SearchBox"
 import { SeedDbButton } from "@/components/gallery/SeedDbButton"
+import { SelectModeButton } from "@/components/gallery/SelectModeButton"
 import { SidebarFooter } from "@/components/gallery/SidebarFooter"
+import { SidebarIconButton } from "@/components/gallery/SidebarIconButton"
+import { SidebarInput } from "@/components/gallery/SidebarInput"
+import { SidebarNav } from "@/components/gallery/SidebarNav"
+import { SidebarRail } from "@/components/gallery/SidebarRail"
 import { SidebarShell } from "@/components/gallery/SidebarShell"
+import { SortMenu } from "@/components/gallery/SortMenu"
 import { TagList } from "@/components/gallery/TagList"
 import { ThemeToggle } from "@/components/gallery/ThemeToggle"
 import { PopupBody } from "@/components/popup/PopupBody"
@@ -50,6 +65,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import type { SortOrder } from "@/lib/sort-sites"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
 
@@ -297,14 +313,15 @@ function GalleryComponentsDemo() {
   const [active, setActive] = useState<string[]>([])
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(2)
+  const [sort, setSort] = useState<SortOrder>("savedAt")
+  const [selectOn, setSelectOn] = useState(false)
 
   return (
     <>
-      <DemoBox label="GalleryHeader — SearchBox + PinnedTagChips + select toggle">
+      <DemoBox label="GalleryHeader — SortMenu + PinnedTagChips (centre slot) + Select toggle">
         <GalleryHeader
           className="w-full"
-          start={<SearchBox className="w-56" value={query} onChange={setQuery} />}
-          endClassName="w-56 shrink-0"
+          start={<SortMenu value={sort} onChange={setSort} />}
           center={
             <PinnedTagChips
               className="max-w-xl shrink-0"
@@ -313,12 +330,50 @@ function GalleryComponentsDemo() {
               onSelect={setActive}
             />
           }
-          end={
-            <Button variant="ghost" size="sm">
-              Select
-            </Button>
-          }
+          end={<SelectModeButton selectMode={selectOn} onToggle={() => setSelectOn((v) => !v)} />}
         />
+      </DemoBox>
+
+      <DemoBox label="HeaderButton (idle, pressed) — SidebarIconButton (sm, destructive, md, lg) — SidebarInput (md, sm)">
+        <HeaderButton>Idle</HeaderButton>
+        <HeaderButton pressed>Pressed</HeaderButton>
+        <SidebarIconButton aria-label="Add">
+          <PlusIcon />
+        </SidebarIconButton>
+        <SidebarIconButton tone="destructive" aria-label="Delete">
+          <Trash2Icon />
+        </SidebarIconButton>
+        <SidebarIconButton size="md" aria-label="Collapse">
+          <PanelLeftCloseIcon />
+        </SidebarIconButton>
+        <SidebarIconButton size="lg" aria-label="Expand">
+          <PanelLeftOpenIcon />
+        </SidebarIconButton>
+        <SidebarInput className="w-40" placeholder="Search sites" />
+        <SidebarInput size="sm" className="w-40" placeholder="New tag name…" />
+      </DemoBox>
+
+      <DemoBox label="SearchBox (sidebar search field)">
+        <SearchBox className="w-60" value={query} onChange={setQuery} />
+      </DemoBox>
+
+      <DemoBox label="NavRow — idle, active, with count, compact (icon-only rail)">
+        <div className="flex w-60 flex-col gap-0.5 rounded-card bg-surface-section p-1.5">
+          <NavRow active icon={<LayoutGridIcon />} label="Gallery" count={24} onClick={() => {}} />
+          <NavRow icon={<ChartNoAxesColumnIcon />} label="Overview" onClick={() => {}} />
+        </div>
+        <div className="flex w-12 flex-col gap-0.5 rounded-card bg-surface-section p-1.5">
+          <NavRow compact active icon={<LayoutGridIcon />} label="Gallery" onClick={() => {}} />
+          <NavRow compact icon={<ChartNoAxesColumnIcon />} label="Overview" onClick={() => {}} />
+        </div>
+      </DemoBox>
+
+      <DemoBox label="ThemeToggle (segmented light / dark)">
+        <ThemeToggle className="w-60" />
+      </DemoBox>
+
+      <DemoBox label="OverviewPlaceholder">
+        <OverviewPlaceholder className="w-full" />
       </DemoBox>
 
       <DemoBox label="BulkActionBar (select mode)">
@@ -380,20 +435,30 @@ function GalleryComponentsDemo() {
       </DemoBox>
 
       <DemoBox
-        label="SidebarShell — SidebarFooter + DataMenu + ThemeToggle"
+        label="SidebarShell — search, SidebarNav, TagList, SidebarFooter (DataMenu + ThemeToggle)"
         className="items-start"
       >
         <SidebarShell
-          className="h-72"
+          className="h-[34rem]"
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((c) => !c)}
+          rail={
+            <SidebarRail
+              page="gallery"
+              totalSites={15}
+              onPageChange={() => {}}
+              onSearch={() => setCollapsed(false)}
+            />
+          }
           footer={
             <SidebarFooter status="Backup downloaded">
               <DataMenu onExport={() => {}} onImportFile={() => {}} onCopyForAI={() => {}} />
-              <ThemeToggle className="ml-auto" />
+              <ThemeToggle />
             </SidebarFooter>
           }
         >
+          <SearchBox value={query} onChange={setQuery} />
+          <SidebarNav className="px-0.5" page="gallery" totalSites={15} onPageChange={() => {}} />
           <TagList
             className="min-h-0 flex-1"
             tags={DEMO_TAGS.map((name, i) => ({ name, count: i + 1 }))}
