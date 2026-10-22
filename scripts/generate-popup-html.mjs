@@ -60,7 +60,7 @@ const criticalTokens = `:root {${lightRoot.content}}
 
 // Layout-only rules for the popup's above-the-fold skeleton. Sizes/spacing
 // mirror the real Tailwind classes used in src/popup.tsx's first frame
-// (w-[300px] flex flex-col gap-3 p-4 header row + h-9 primary button), but
+// (w-[300px] flex flex-col gap-3 p-4 header row + size-8 icon button + h-9 gradient primary button), but
 // every color/radius/font value is a var(--token) defined above — never a
 // literal duplicated from style.css.
 const skeletonLayoutCss = `
@@ -86,28 +86,43 @@ const skeletonLayoutCss = `
   #__plasmo_skeleton .sk-title {
     font-size: var(--text-sm);
     font-weight: 600;
+    letter-spacing: -0.025em;
     color: hsl(var(--foreground));
   }
   #__plasmo_skeleton .sk-icon-btn {
-    height: 1.75rem;
-    width: 1.75rem;
+    height: 2rem;
+    width: 2rem;
     border-radius: calc(var(--radius) - 2px);
+    border: 1px solid hsl(var(--input));
+    background-color: hsl(var(--background));
+    box-shadow: var(--shadow-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: hsl(var(--foreground));
   }
   #__plasmo_skeleton .sk-separator {
     height: 1px;
     width: 100%;
-    background-color: hsl(var(--border));
+    background-color: hsl(var(--separator));
   }
   #__plasmo_skeleton .sk-button {
     height: 2.25rem;
     width: 100%;
     border-radius: calc(var(--radius) - 2px);
-    background-color: hsl(var(--primary));
+    background-image: linear-gradient(
+      180deg,
+      hsl(var(--primary-gradient-from)),
+      hsl(var(--primary-gradient-to))
+    );
+    box-shadow: var(--shadow-primary);
     color: hsl(var(--primary-foreground));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--text-sm);
+    gap: 0.5rem;
+    /* Same size as the Button primitive's Tailwind text-sm, so the swap does not reflow. */
+    font-size: 0.875rem;
     font-weight: 500;
   }`
 
@@ -151,10 +166,15 @@ ${skeletonLayoutCss}
     <div id="__plasmo_skeleton" aria-hidden="true">
       <div class="sk-header">
         <span class="sk-title">URL Gallery</span>
-        <div class="sk-icon-btn"></div>
+        <div class="sk-icon-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+        </div>
       </div>
       <div class="sk-separator"></div>
-      <div class="sk-button">Save this tab</div>
+      <div class="sk-button">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+        Save this tab
+      </div>
     </div>
   </body>
 </html>

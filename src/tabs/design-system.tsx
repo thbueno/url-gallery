@@ -26,6 +26,10 @@ import { SidebarFooter } from "@/components/gallery/SidebarFooter"
 import { SidebarShell } from "@/components/gallery/SidebarShell"
 import { TagList } from "@/components/gallery/TagList"
 import { ThemeToggle } from "@/components/gallery/ThemeToggle"
+import { PermissionPrompt } from "@/components/popup/PermissionPrompt"
+import { PopupHeader } from "@/components/popup/PopupHeader"
+import { PopupNote } from "@/components/popup/PopupNote"
+import { SaveButton } from "@/components/popup/SaveButton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -428,7 +432,74 @@ const NAV_ITEMS = [
   { id: "dropdown", label: "Dropdown Menu", icon: ChevronDownIcon },
   { id: "gallery-preview", label: "Gallery Preview", icon: GridIcon },
   { id: "gallery-components", label: "Gallery Components", icon: LayersIcon },
+  { id: "popup-components", label: "Popup Components", icon: BookmarkIcon },
 ]
+
+// ── Popup components ──────────────────────────────────────────────────────────
+
+/** Fixed-width frame matching the toolbar popup (w-[300px], p-4, gap-3). */
+function PopupFrame({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
+      <div className="flex w-[300px] flex-col gap-3 rounded-lg border bg-background p-4">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function PopupComponentsDemo() {
+  return (
+    <div className="flex flex-wrap items-start gap-6">
+      <PopupFrame label="Idle">
+        <PopupHeader fullThumbnails={false} onOpenGallery={() => {}} />
+        <Separator className="bg-separator" />
+        <SaveButton state="idle" onClick={() => {}} />
+      </PopupFrame>
+      <PopupFrame label="Saving…">
+        <PopupHeader fullThumbnails={true} onOpenGallery={() => {}} />
+        <Separator className="bg-separator" />
+        <SaveButton state="saving" onClick={() => {}} />
+      </PopupFrame>
+      <PopupFrame label="Saved! (full thumbnails)">
+        <PopupHeader fullThumbnails={true} onOpenGallery={() => {}} />
+        <Separator className="bg-separator" />
+        <SaveButton state="saved-full" onClick={() => {}} />
+      </PopupFrame>
+      <PopupFrame label="Saved with page-icon hint">
+        <PopupHeader fullThumbnails={false} onOpenGallery={() => {}} />
+        <Separator className="bg-separator" />
+        <SaveButton state="saved-favicon" onClick={() => {}} />
+        <PopupNote>
+          Saved with the page icon as its thumbnail. Enable better thumbnails below for a richer
+          preview.
+        </PopupNote>
+        <PermissionPrompt onGrant={() => {}} />
+      </PopupFrame>
+      <PopupFrame label="Error">
+        <PopupHeader fullThumbnails={false} onOpenGallery={() => {}} />
+        <Separator className="bg-separator" />
+        <SaveButton state="error" onClick={() => {}} />
+        <PopupNote tone="error">Can't save this page</PopupNote>
+      </PopupFrame>
+      <PopupFrame label="Permission prompt">
+        <PopupHeader fullThumbnails={false} onOpenGallery={() => {}} />
+        <Separator className="bg-separator" />
+        <SaveButton state="idle" onClick={() => {}} />
+        <PermissionPrompt onGrant={() => {}} />
+      </PopupFrame>
+      <PopupFrame label="Declined: “Using page icons” note">
+        <PopupHeader fullThumbnails={false} onOpenGallery={() => {}} />
+        <Separator className="bg-separator" />
+        <SaveButton state="idle" onClick={() => {}} />
+        <PopupNote>Using page icons as thumbnails.</PopupNote>
+      </PopupFrame>
+    </div>
+  )
+}
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -843,6 +914,14 @@ export default function DesignSystem() {
               The real components the gallery page is composed from, rendered with demo props.
             </p>
             <GalleryComponentsDemo />
+          </Section>
+
+          {/* ── Popup components ──────────────────────────────────── */}
+          <Section id="popup-components" label="Patterns" title="Toolbar Popup — Components">
+            <p className="text-[var(--text-sm)] text-muted-foreground">
+              The real components the toolbar popup is composed from, in each state it can show.
+            </p>
+            <PopupComponentsDemo />
           </Section>
         </div>
       </main>
