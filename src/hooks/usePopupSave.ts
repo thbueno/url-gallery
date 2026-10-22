@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 
+import { getDomain } from "@/lib/format"
 import { GENERIC_OG_DOMAINS } from "@/lib/thumbnail-service"
 import { withTimeout } from "@/lib/utils"
 import { getYoutubeThumbnailUrls, getYoutubeVideoId } from "@/lib/youtube"
@@ -112,7 +113,7 @@ export function usePopupSave() {
       // executeScript fails on chrome:// pages and restricted origins — fall through
     }
 
-    const hostname = new URL(tab.url).hostname.replace(/^www\./, "")
+    const hostname = getDomain(tab.url)
 
     const youtubeVideoId = getYoutubeVideoId(tab.url)
     if (youtubeVideoId !== undefined) {

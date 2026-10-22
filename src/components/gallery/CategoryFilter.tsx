@@ -69,7 +69,7 @@ const tagRowVariants = cva("group/row relative", {
 
 /** Edit and pin buttons overlaid on the right side of a tag row. */
 const rowActionVariants = cva(
-  "absolute top-1/2 -translate-y-1/2 transition-[opacity,color,background-color] duration-150 focus-visible:opacity-100",
+  "absolute top-1/2 -translate-y-1/2 transition-[opacity,color,background-color] duration-fast focus-visible:opacity-100",
   {
     variants: {
       slot: {

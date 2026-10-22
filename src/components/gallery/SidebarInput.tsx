@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 const sidebarInputVariants = cva(
-  "rounded-inner border-border bg-surface-inner text-sm shadow-xs transition-[border-color,box-shadow] duration-150 ease-out hover:border-border-hover focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30",
+  "rounded-inner border-border bg-surface-inner text-sm shadow-xs transition-[border-color,box-shadow] duration-fast ease-out hover:border-border-hover focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30",
   {
     variants: {
       size: {

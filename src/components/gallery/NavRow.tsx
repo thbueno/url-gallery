@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 export const navRowVariants = cva(
   [
     "flex w-full items-center gap-2.5 rounded-inner border border-transparent px-2.5 py-1.5 text-left text-sm font-medium outline-none",
-    "transition-[background-color,color,box-shadow,border-color,transform] duration-150 ease-out active:scale-[0.98]",
+    "transition-[background-color,color,box-shadow,border-color,transform] duration-fast ease-out active:scale-press",
     "focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:active:scale-100",
   ],
   {

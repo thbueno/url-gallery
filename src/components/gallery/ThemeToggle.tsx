@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { useThemeStore } from "@/store/themeStore"
 
 const segmentClass =
-  "h-7 min-w-0 flex-1 gap-1.5 px-0 text-xs text-muted-foreground transition-[background-color,color,box-shadow] duration-150 ease-out hover:bg-transparent hover:text-foreground focus-visible:ring-2 motion-reduce:transition-none data-[state=on]:bg-surface-inner data-[state=on]:text-foreground data-[state=on]:shadow-2xs [&_svg]:size-3.5"
+  "h-7 min-w-0 flex-1 gap-1.5 px-0 text-xs text-muted-foreground transition-[background-color,color,box-shadow] duration-fast ease-out hover:bg-transparent hover:text-foreground focus-visible:ring-2 motion-reduce:transition-none data-[state=on]:bg-surface-inner data-[state=on]:text-foreground data-[state=on]:shadow-2xs [&_svg]:size-3.5"
 
 interface ThemeToggleProps {
   className?: string

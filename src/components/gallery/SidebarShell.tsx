@@ -16,7 +16,7 @@ const headerVariants = cva("flex shrink-0 items-center gap-2.5", {
 })
 
 const sidebarVariants = cva(
-  "flex shrink-0 flex-col gap-3 overflow-hidden rounded-card bg-surface-section p-1.5 transition-[width] duration-200 motion-reduce:transition-none",
+  "flex shrink-0 flex-col gap-3 overflow-hidden rounded-card bg-surface-section p-1.5 transition-[width] duration-base motion-reduce:transition-none",
   {
     variants: {
       collapsed: {

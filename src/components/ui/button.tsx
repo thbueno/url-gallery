@@ -14,7 +14,7 @@ const buttonVariants = cva(
         // hover gradient fades in from a ::before layer. Stops come from --primary-gradient-*.
         gradient: [
           "relative isolate overflow-hidden bg-primary-gradient text-primary-foreground shadow-primary",
-          "before:absolute before:inset-0 before:-z-10 before:bg-primary-gradient-hover before:opacity-0 before:transition-opacity before:duration-150 before:ease-out before:content-['']",
+          "before:absolute before:inset-0 before:-z-10 before:bg-primary-gradient-hover before:opacity-0 before:transition-opacity before:duration-fast before:ease-out before:content-['']",
           "hover:before:opacity-100",
         ].join(" "),
         destructive: "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90",
