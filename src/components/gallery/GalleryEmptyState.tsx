@@ -43,7 +43,9 @@ export function GalleryEmptyState({
               : "No saved sites yet"}
           </p>
           <p className="text-xs text-muted-foreground/60">
-            Click the bookmark button on any page to save it
+            {activeTags.length > 0
+              ? "Add this tag to a saved site to see it here"
+              : "Open the extension from the toolbar on any page to save it"}
           </p>
         </>
       )}

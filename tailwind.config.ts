@@ -88,6 +88,7 @@ const config: Config = {
         lg: "var(--shadow-lg)",
         pop: "var(--shadow-pop)",
         primary: "var(--shadow-primary)",
+        outline: "var(--shadow-outline)",
       },
       backgroundImage: {
         "primary-gradient":
@@ -102,6 +103,20 @@ const config: Config = {
       },
       spacing: {
         sidebar: "var(--sidebar-width)",
+        "card-inset": "var(--card-inset)",
+      },
+      translate: {
+        lift: "var(--lift)",
+      },
+      scale: {
+        press: "var(--press-scale)",
+      },
+      transitionDuration: {
+        fast: "var(--duration-fast)",
+        base: "var(--duration-base)",
+      },
+      aspectRatio: {
+        thumb: "var(--thumb-aspect)",
       },
     },
   },

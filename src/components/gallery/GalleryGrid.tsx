@@ -14,7 +14,7 @@ interface GalleryGridProps {
   isLoading: boolean
   searchQuery: string
   activeTags: string[]
-  /** Tag names offered in each card's tag dropdown. */
+  /** Tag names offered in each card's "+" tag menu. */
   availableTags: string[]
   selectMode: boolean
   selectedIds: Set<number>
@@ -55,8 +55,9 @@ export function GalleryGrid({
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => scrollRef.current,
-    // Estimate based on aspect-video image + content block at MIN_CARD_WIDTH + gap; measureElement refines it
-    estimateSize: () => Math.round((MIN_CARD_WIDTH * 9) / 16) + 96 + CARD_GAP,
+    // Estimate: 16:10 thumbnail + title/domain rows + tag row + card padding at MIN_CARD_WIDTH, plus the
+    // gap. measureElement refines it once rows render.
+    estimateSize: () => Math.round((MIN_CARD_WIDTH * 10) / 16) + 112 + CARD_GAP,
     overscan: 3,
   })
 
