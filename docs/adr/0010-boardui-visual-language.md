@@ -8,7 +8,9 @@ The gallery drifted into a green-tinted palette (DM Sans loaded from Google Font
 
 **Inter and JetBrains Mono, bundled locally.** Fonts come from the `@fontsource-variable/*` npm packages and are imported in `src/style.css`, so the extension makes no remote font request and works offline. This replaces the Google Fonts `@import` for DM Sans.
 
-**Soft radius.** One base value, `--radius: 14px`, and every other step derives from it: sm = 0.6r, lg = 1.35r, xl = 1.75r, card = 1.5r, inner = max(0, 1.5r − 6px). Changing the feel of the whole app is a one-line edit.
+**Soft radius.** One base value, `--radius: 14px`, and every other step derives from it: sm = 0.6r, lg = 1.35r, xl = 1.75r, card = 1.5r, inner = max(0, 1.5r − `--card-inset`), so the thumbnail corner stays concentric with the card. Changing the feel of the whole app is a one-line edit.
+
+**Card tokens.** The site card (#65) added a few more tokens, all in `src/style.css`: `--card-inset` (6px gap between the card edge and the thumbnail), `--thumb-aspect` (16 / 10), `--lift` (how far a hovered thumbnail rises), `--press-scale` plus `--duration-fast` and `--duration-base` for hover and press motion, and `--shadow-outline` (a 1px inner edge so thumbnails don't bleed into the card).
 
 **One neutral tag style.** The target is that every tag, including "Uncategorized", uses the `--tag-bg` fill with foreground text: no hue, no coloured dots. The token and a `tag` variant of `Badge` exist now; the real `SiteCard` adopts it in #65.
 

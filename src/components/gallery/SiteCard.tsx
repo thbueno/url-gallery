@@ -1,29 +1,49 @@
-import { useEffect, useState } from "react"
+import { cva } from "class-variance-authority"
+import { CheckIcon, PinIcon } from "lucide-react"
 
-import { CheckIcon, ChevronDownIcon, PinIcon, TagIcon, Trash2Icon } from "lucide-react"
-
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { ALL_TAGS } from "@/lib/categorizer"
+import { Favicon } from "@/components/gallery/Favicon"
+import { SiteCardMenu } from "@/components/gallery/SiteCardMenu"
+import { SiteThumbnail } from "@/components/gallery/SiteThumbnail"
+import { TagChip } from "@/components/gallery/TagChip"
+import { TagMenu } from "@/components/gallery/TagMenu"
+import { ALL_TAGS, UNCATEGORIZED } from "@/lib/categorizer"
+import { getDomain, timeAgo } from "@/lib/format"
 import type { SavedSite } from "@/lib/store"
+import { displayTags, toggleTag, withTag } from "@/lib/tags"
 import { cn } from "@/lib/utils"
+
+const cardVariants = cva(
+  [
+    "group relative flex w-full flex-col rounded-card bg-surface-section p-card-inset text-left",
+    "transition-colors duration-base ease-out hover:bg-surface-tertiary",
+    "motion-reduce:transition-none",
+  ],
+  {
+    variants: {
+      selected: {
+        true: "ring-2 ring-ring ring-offset-2 ring-offset-background",
+        false: "",
+      },
+    },
+    defaultVariants: { selected: false },
+  }
+)
+
+const checkBadgeVariants = cva(
+  [
+    "flex size-6 items-center justify-center rounded-md border shadow-xs backdrop-blur-sm",
+    "transition-colors duration-fast ease-out motion-reduce:transition-none",
+  ],
+  {
+    variants: {
+      selected: {
+        true: "border-transparent bg-primary-gradient text-primary-foreground",
+        false: "border-border bg-surface-inner/90 text-transparent group-hover:border-border-hover",
+      },
+    },
+    defaultVariants: { selected: false },
+  }
+)
 
 interface SiteCardProps {
   site: SavedSite
@@ -31,6 +51,7 @@ interface SiteCardProps {
   onTagsChange?: (site: SavedSite, tags: string[]) => void
   onPinToggle?: (site: SavedSite, pinned: boolean) => void
   onDelete?: (site: SavedSite) => void
+  /** Tag names the "+" menu offers. */
   availableTags?: string[]
   className?: string
   selectMode?: boolean
@@ -38,25 +59,13 @@ interface SiteCardProps {
   onToggleSelect?: (site: SavedSite) => void
 }
 
-function useBlobUrl(blob: Blob | null): string | undefined {
-  const [url, setUrl] = useState<string>()
-  useEffect(() => {
-    if (!blob) return
-    const u = URL.createObjectURL(blob)
-    setUrl(u)
-    return () => URL.revokeObjectURL(u)
-  }, [blob])
-  return url
-}
-
-function getDomain(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "")
-  } catch {
-    return ""
-  }
-}
-
+/**
+ * Grey section card, no border or shadow. The thumbnail sits inset by --card-inset and lifts on
+ * hover. The thumbnail + title is the one button (open / select); its ::after stretches over the
+ * whole card so any spot on the card opens the site. The tag controls and "more" menu are siblings
+ * of that button, raised above the stretch with z-10, so they stay separate controls.
+ * Parents own placement and size.
+ */
 export function SiteCard({
   site,
   onClick,
@@ -69,8 +78,10 @@ export function SiteCard({
   selected,
   onToggleSelect,
 }: SiteCardProps) {
-  const thumbUrl = useBlobUrl(site.thumb)
   const domain = getDomain(site.url)
+  // Tag editing and the "more" menu are off while selecting.
+  const editTags = selectMode ? undefined : onTagsChange
+  const hasMenu = !selectMode && !!(onPinToggle || onDelete)
 
   function handleCardClick() {
     if (selectMode) {
@@ -81,227 +92,101 @@ export function SiteCard({
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleCardClick}
-      className={cn(
-        "group flex w-full cursor-pointer flex-col overflow-hidden rounded-card",
-        "bg-card",
-        "transition-colors duration-200",
-        "hover:bg-accent",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        selected && "ring-2 ring-ring ring-offset-2",
-        "text-left",
-        className
-      )}
-    >
-      {/* Thumbnail or fallback, with floating glass control pill */}
-      <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-t-card bg-muted">
-        {/* Selection checkbox — top-left, mirrors the glass pill's visual language */}
-        {selectMode && (
-          <div className="absolute left-2 top-2 z-10">
-            <span
-              onClick={(e) => {
-                e.stopPropagation()
-                onToggleSelect?.(site)
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.stopPropagation()
-                  onToggleSelect?.(site)
-                }
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-              aria-pressed={!!selected}
-              aria-label={selected ? "Deselect" : "Select"}
-              className={cn(
-                "flex size-6 cursor-pointer items-center justify-center rounded-md border backdrop-blur-md transition-colors",
-                selected
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-white/60 bg-black/40 text-transparent hover:border-white"
-              )}
-            >
-              <CheckIcon size={14} />
-            </span>
-          </div>
+    <div className={cn(cardVariants({ selected: !!selected }), className)}>
+      <button
+        type="button"
+        onClick={handleCardClick}
+        aria-pressed={selectMode ? !!selected : undefined}
+        title={site.title}
+        className={cn(
+          // Not positioned and not transformed, so the ::after below stretches to the card root.
+          "group/open flex w-full cursor-pointer flex-col rounded-inner text-left outline-none",
+          "after:absolute after:inset-0 after:rounded-card",
+          "focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2 focus-visible:after:ring-offset-background"
         )}
-        {thumbUrl ? (
-          <img
-            src={thumbUrl}
-            alt=""
-            className="absolute inset-0 h-full w-full rounded-t-card object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center rounded-t-card">
-            {site.favicon ? (
-              <img src={site.favicon} alt="" className="h-10 w-10 opacity-50" />
-            ) : (
-              <span className="select-none text-2xl font-semibold text-muted-foreground/30">
-                {domain[0]?.toUpperCase() ?? "?"}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Glass control pill — pin, delete, floating over the image */}
-        {(onPinToggle || onDelete) && (
-          <div
-            className={cn(
-              "absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full bg-black/40 p-1 backdrop-blur-md transition-opacity",
-              site.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-            )}
-          >
-            {onPinToggle && (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onPinToggle(site, !site.pinned)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation()
-                    onPinToggle(site, !site.pinned)
-                  }
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-                aria-label={site.pinned ? "Unpin" : "Pin"}
-                className={cn(
-                  "flex size-6 cursor-pointer items-center justify-center rounded-full",
-                  "text-white/90 hover:text-white"
-                )}
-              >
-                <PinIcon size={12} className={cn(site.pinned && "fill-white")} />
-              </span>
-            )}
-
-            {onDelete && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <span
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.stopPropagation()
-                      }
-                    }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    aria-label="Delete"
-                    className={cn(
-                      "flex size-6 cursor-pointer items-center justify-center rounded-full",
-                      "text-white/90 hover:text-red-400"
-                    )}
-                  >
-                    <Trash2Icon size={12} />
-                  </span>
-                </AlertDialogTrigger>
-                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete "{site.title}"?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action can't be undone. This will permanently remove the site from your
-                      gallery.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => onDelete(site)}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Content block — title, domain + tag chip */}
-      <div className="flex flex-col gap-2 p-3.5">
-        <p className="truncate text-sm font-medium leading-tight text-card-foreground">
-          {site.title}
-        </p>
-
-        <div className="flex items-center gap-2">
-          <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{domain}</span>
-
-          {onTagsChange ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                asChild
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <span
-                  className={cn(
-                    "group flex shrink-0 cursor-pointer items-center gap-1 rounded-full border px-2.5 py-1",
-                    "text-[11px] leading-none text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
-                  )}
-                  aria-label="Edit tags"
-                >
-                  {site.tags.length > 1
-                    ? `${site.tags[0]} +${site.tags.length - 1}`
-                    : (site.tags[0] ?? "Uncategorized")}
-                  <ChevronDownIcon
-                    size={11}
-                    className="transition-transform duration-200 group-data-[state=open]:rotate-180"
-                  />
-                </span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-36"
-                onPointerDown={(e) => e.stopPropagation()}
-                onPointerUp={(e) => e.stopPropagation()}
-                onPointerDownCapture={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <DropdownMenuLabel className="text-[10px]">Tags</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {(availableTags ?? ALL_TAGS)
-                  .filter((t) => t !== "Uncategorized")
-                  .map((tag) => {
-                    const checked = site.tags.includes(tag)
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={tag}
-                        className="text-xs"
-                        checked={checked}
-                        onCheckedChange={(next) => {
-                          let newTags: string[]
-                          if (next) {
-                            newTags = [...site.tags.filter((t) => t !== "Uncategorized"), tag]
-                          } else {
-                            newTags = site.tags.filter((t) => t !== tag)
-                            if (newTags.length === 0) newTags = ["Uncategorized"]
-                          }
-                          onTagsChange(site, newTags)
-                        }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onPointerUp={(e) => e.stopPropagation()}
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        {tag}
-                      </DropdownMenuCheckboxItem>
-                    )
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <span
-              className={cn(
-                "flex shrink-0 items-center gap-1 rounded-full bg-muted px-2.5 py-1",
-                "text-[10px] leading-none text-muted-foreground"
-              )}
-            >
-              <TagIcon size={10} />
-              {site.tags[0] ?? "Uncategorized"}
-            </span>
+      >
+        {/* Lifts as one piece: thumbnail plus the select and pin badges on it. */}
+        <div
+          className={cn(
+            "relative rounded-inner shadow-2xs",
+            "transition-[transform,box-shadow] duration-base ease-out",
+            "group-hover:-translate-y-lift group-hover:shadow-md group-active/open:scale-press",
+            "motion-reduce:transition-none motion-reduce:group-hover:translate-y-0 motion-reduce:group-active/open:scale-100"
           )}
+        >
+          <SiteThumbnail site={site} className="rounded-inner" />
+          {selectMode || site.pinned ? (
+            <div className="absolute left-2 top-2 flex items-center gap-1">
+              {selectMode ? (
+                <span aria-hidden="true" className={checkBadgeVariants({ selected: !!selected })}>
+                  <CheckIcon className="size-3.5" strokeWidth={3} />
+                </span>
+              ) : null}
+              {site.pinned ? (
+                <span
+                  role="img"
+                  aria-label="Pinned"
+                  className="flex size-6 items-center justify-center rounded-md bg-surface-inner/90 text-muted-foreground shadow-xs backdrop-blur-sm"
+                >
+                  <PinIcon className="size-3" aria-hidden="true" />
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
+
+        <div className="flex w-full flex-col gap-1.5 px-2 pb-1.5 pt-2.5">
+          <h3 className="truncate text-sm font-medium leading-snug text-foreground">
+            {site.title}
+          </h3>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Favicon site={site} />
+            <span className="min-w-0 flex-1 truncate">{domain}</span>
+            <span className="shrink-0 tabular-nums">{timeAgo(site.savedAt)}</span>
+          </div>
+        </div>
+      </button>
+
+      <div className="flex flex-wrap items-center gap-1 px-2 pb-2 pt-0.5">
+        {displayTags(site.tags).map((tag) => (
+          <TagChip
+            key={tag}
+            name={tag}
+            onRemove={
+              editTags && tag !== UNCATEGORIZED
+                ? () => editTags(site, toggleTag(site.tags, tag))
+                : undefined
+            }
+          />
+        ))}
+        {editTags ? (
+          <TagMenu
+            label={`Edit tags for ${site.title}`}
+            current={site.tags}
+            available={availableTags ?? ALL_TAGS}
+            onToggle={(tag) => editTags(site, toggleTag(site.tags, tag))}
+            onCreate={(name) => editTags(site, withTag(site.tags, name))}
+          />
+        ) : null}
       </div>
-    </button>
+
+      {/* Floating "more" menu: shows on hover, keyboard focus, or while open. Hidden when selecting. */}
+      {hasMenu ? (
+        <div
+          className={cn(
+            "absolute right-card-inset top-card-inset z-10 p-2",
+            "opacity-0 transition-opacity duration-fast ease-out motion-reduce:transition-none",
+            "group-hover:opacity-100 group-focus-within:opacity-100 has-[[data-state=open]]:opacity-100"
+          )}
+        >
+          <SiteCardMenu
+            title={site.title}
+            pinned={site.pinned}
+            onPinToggle={onPinToggle ? () => onPinToggle(site, !site.pinned) : undefined}
+            onDelete={onDelete ? () => onDelete(site) : undefined}
+          />
+        </div>
+      ) : null}
+    </div>
   )
 }

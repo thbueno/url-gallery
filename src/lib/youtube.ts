@@ -1,7 +1,9 @@
+import { getDomain } from "@/lib/format"
+
 export function getYoutubeVideoId(url: string): string | undefined {
   try {
     const parsed = new URL(url)
-    const host = parsed.hostname.replace(/^www\./, "")
+    const host = getDomain(url)
     if (host === "youtu.be") {
       return parsed.pathname.slice(1) || undefined
     }

@@ -135,8 +135,21 @@
     --radius-lg: calc(var(--radius) * 1.35);
     --radius-xl: calc(var(--radius) * 1.75);
     --radius-card: calc(var(--radius) * 1.5); /* site card corner radius */
-    /* Content inset ~6px inside a card-radius container */
-    --radius-inner: max(0px, calc(var(--radius) * 1.5 - 6px));
+    /* Gap between a card edge and the thumbnail inside it */
+    --card-inset: 0.375rem; /* 6px */
+    /* Thumbnail corner radius: concentric with the card (card radius minus the inset) */
+    --radius-inner: max(0px, calc(var(--radius) * 1.5 - var(--card-inset)));
+
+    /* ── Motion (card hover and press, ADR 0010) ──────────────────── */
+    --duration-fast: 150ms;
+    --duration-base: 200ms;
+    --press-scale: 0.98;
+    --lift: 2px; /* how far a hovered card's thumbnail rises */
+
+    /* ── Thumbnail ────────────────────────────────────────────────── */
+    --thumb-aspect: 16 / 10;
+    /* 1px inner edge so a thumbnail never bleeds into the card surface */
+    --shadow-outline: inset 0 0 0 1px hsl(var(--foreground) / 0.07);
 
     /* ── Layout ───────────────────────────────────────────────────── */
     --sidebar-width: 15rem;

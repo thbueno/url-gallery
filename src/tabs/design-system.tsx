@@ -16,10 +16,11 @@ import {
   Trash2Icon,
   TypeIcon,
 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { BulkActionBar } from "@/components/gallery/BulkActionBar"
 import { DataMenu } from "@/components/gallery/DataMenu"
+import { Favicon } from "@/components/gallery/Favicon"
 import { GalleryEmptyState } from "@/components/gallery/GalleryEmptyState"
 import { GalleryGrid } from "@/components/gallery/GalleryGrid"
 import { GalleryHeader } from "@/components/gallery/GalleryHeader"
@@ -38,8 +39,13 @@ import { SidebarInput } from "@/components/gallery/SidebarInput"
 import { SidebarNav } from "@/components/gallery/SidebarNav"
 import { SidebarRail } from "@/components/gallery/SidebarRail"
 import { SidebarShell } from "@/components/gallery/SidebarShell"
+import { SiteCard } from "@/components/gallery/SiteCard"
+import { SiteCardMenu } from "@/components/gallery/SiteCardMenu"
+import { SiteThumbnail } from "@/components/gallery/SiteThumbnail"
 import { SortMenu } from "@/components/gallery/SortMenu"
+import { TagChip } from "@/components/gallery/TagChip"
 import { TagList } from "@/components/gallery/TagList"
+import { TagMenu } from "@/components/gallery/TagMenu"
 import { ThemeToggle } from "@/components/gallery/ThemeToggle"
 import { PopupBody } from "@/components/popup/PopupBody"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -234,60 +240,95 @@ const DEMO_SITES = [
   },
 ]
 
-function SiteCardPreview({ title, domain, category, favicon, thumbColor }: (typeof DEMO_SITES)[0]) {
-  return (
-    <div className="group flex w-[var(--card-min-width)] flex-col overflow-hidden rounded-card border bg-card shadow-sm transition-all duration-150 hover:shadow-md hover:ring-1 hover:ring-border-hover">
-      {/* Thumbnail area */}
-      <div className={cn("relative h-32 bg-gradient-to-br", thumbColor)}>
-        <div className="absolute inset-0 flex items-center justify-center opacity-10">
-          <GridIcon className="h-16 w-16 text-white" />
-        </div>
-        <div className="absolute bottom-2 left-2">
-          <Badge variant="secondary" className="text-[10px]">
-            {category}
-          </Badge>
-        </div>
-      </div>
-
-      {/* Card body */}
-      <div className="flex flex-col gap-1 p-3">
-        <div className="flex items-center gap-2">
-          <Avatar className="size-5 rounded-sm">
-            <AvatarFallback className="rounded-sm text-[10px]">{favicon}</AvatarFallback>
-          </Avatar>
-          <span className="truncate text-[var(--text-sm)] font-medium text-card-foreground">
-            {title}
-          </span>
-        </div>
-        <span className="font-mono text-[var(--text-xs)] text-muted-foreground">{domain}</span>
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between border-t px-3 py-2">
-        <span className="font-mono text-[var(--text-xs)] text-muted-foreground">0 visits</span>
-        <Button variant="ghost" size="icon" className="size-6 text-muted-foreground">
-          <ExternalLinkIcon className="size-3" />
-        </Button>
-      </div>
-    </div>
-  )
+/** Demo thumbnail: a gradient PNG blob, so the card exercises its real-thumbnail path. */
+function useDemoThumb(from: string, to: string): Blob | null {
+  const [blob, setBlob] = useState<Blob | null>(null)
+  useEffect(() => {
+    const canvas = document.createElement("canvas")
+    canvas.width = 640
+    canvas.height = 400
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    const gradient = ctx.createLinearGradient(0, 0, 640, 400)
+    gradient.addColorStop(0, from)
+    gradient.addColorStop(1, to)
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, 640, 400)
+    canvas.toBlob(setBlob, "image/png")
+  }, [from, to])
+  return blob
 }
 
-function SiteCardSkeleton() {
+const CARD_DEMO_TAGS = ["Video", "Music", "Dev Tools", "Docs", "Design", "Uncategorized"]
+const NOW = Date.now()
+const DAY_MS = 86_400_000
+
+function makeDemoSite(patch: Partial<SavedSite>): SavedSite {
+  return {
+    id: 1,
+    url: "https://vercel.com",
+    title: "Vercel",
+    favicon: null,
+    thumb: null,
+    tags: ["Dev Tools"],
+    savedAt: NOW - 2 * DAY_MS,
+    openCount: 0,
+    pinned: false,
+    ...patch,
+  }
+}
+
+/** Real SiteCards with live tag / pin / delete state, covering each visual case. */
+function SiteCardDemo() {
+  const thumbA = useDemoThumb("#18181b", "#4f46e5")
+  const thumbB = useDemoThumb("#0f766e", "#a3e635")
+  const [sites, setSites] = useState<SavedSite[]>(() => [
+    makeDemoSite({ id: 1, title: "Vercel", url: "https://vercel.com" }),
+    makeDemoSite({
+      id: 2,
+      title: "Linear: plan and build products",
+      url: "https://linear.app",
+      tags: ["Dev Tools", "Docs", "Design"],
+      pinned: true,
+      savedAt: NOW - 9 * DAY_MS,
+    }),
+    makeDemoSite({
+      id: 3,
+      title: "Weather today",
+      url: "https://weather.example.org",
+      tags: ["Uncategorized"],
+      savedAt: NOW - 3_600_000,
+    }),
+    makeDemoSite({
+      id: 4,
+      title: "A very long page title that has to be cut off at the card edge",
+      url: "https://www.example.com/a/long/path",
+      tags: ["Video", "Music", "Design", "Docs"],
+      savedAt: NOW - 200 * DAY_MS,
+    }),
+  ])
+  const withThumbs = sites.map((site) => ({
+    ...site,
+    thumb: site.id === 1 ? thumbA : site.id === 2 ? thumbB : null,
+  }))
+
+  function patch(site: SavedSite, next: Partial<SavedSite>) {
+    setSites((all) => all.map((s) => (s.id === site.id ? { ...s, ...next } : s)))
+  }
+
   return (
-    <div className="flex w-[var(--card-min-width)] flex-col overflow-hidden rounded-card border bg-card shadow-sm">
-      <Skeleton className="h-32 w-full rounded-none" />
-      <div className="flex flex-col gap-2 p-3">
-        <div className="flex items-center gap-2">
-          <Skeleton className="size-5 rounded-sm" />
-          <Skeleton className="h-3.5 w-24" />
-        </div>
-        <Skeleton className="h-3 w-16" />
-      </div>
-      <div className="flex items-center justify-between border-t px-3 py-2">
-        <Skeleton className="h-3 w-12" />
-        <Skeleton className="size-6 rounded-md" />
-      </div>
+    <div className="grid w-full grid-cols-1 gap-[var(--gallery-gap)] sm:grid-cols-2">
+      {withThumbs.map((site) => (
+        <SiteCard
+          key={site.id}
+          site={site}
+          availableTags={CARD_DEMO_TAGS}
+          onClick={() => {}}
+          onTagsChange={(s, tags) => patch(s, { tags })}
+          onPinToggle={(s, pinned) => patch(s, { pinned })}
+          onDelete={(s) => setSites((all) => all.filter((x) => x.id !== s.id))}
+        />
+      ))}
     </div>
   )
 }
@@ -303,7 +344,7 @@ const DEMO_GRID_SITES: SavedSite[] = DEMO_SITES.map((site, i) => ({
   favicon: null,
   thumb: null,
   tags: [DEMO_TAGS[i % DEMO_TAGS.length] ?? "Uncategorized"],
-  savedAt: 0,
+  savedAt: NOW - (i + 1) * DAY_MS,
   openCount: 0,
   pinned: i === 0,
 }))
@@ -946,23 +987,65 @@ export default function DesignSystem() {
           {/* ── Gallery Preview ───────────────────────────────────── */}
           <Section id="gallery-preview" label="Patterns" title="Gallery — Site Card Preview">
             <p className="text-[var(--text-sm)] text-muted-foreground">
-              The SiteCard as it will appear in the gallery grid. All values use token variables —
-              no hardcoded colors, sizes, or radius.
+              The real SiteCard and its parts, with live state. Everything reads from tokens.
             </p>
 
-            <DemoBox label="Populated cards">
-              <div className="flex flex-wrap gap-[var(--gallery-gap)]">
-                {DEMO_SITES.map((site) => (
-                  <SiteCardPreview key={site.domain} {...site} />
-                ))}
+            <DemoBox label="Cards: real thumbnail, pinned + 3 tags, Uncategorized, long title (hover, press, use the + and ... menus)">
+              <SiteCardDemo />
+            </DemoBox>
+
+            <DemoBox label="Select mode: unselected and selected">
+              <div className="grid w-full grid-cols-1 gap-[var(--gallery-gap)] sm:grid-cols-2">
+                <SiteCard
+                  site={DEMO_GRID_SITES[0] as SavedSite}
+                  availableTags={DEMO_TAGS}
+                  onClick={() => {}}
+                  selectMode
+                  selected={false}
+                />
+                <SiteCard
+                  site={DEMO_GRID_SITES[1] as SavedSite}
+                  availableTags={DEMO_TAGS}
+                  onClick={() => {}}
+                  selectMode
+                  selected
+                />
               </div>
             </DemoBox>
 
-            <DemoBox label="Skeleton loading state">
-              <div className="flex flex-wrap gap-[var(--gallery-gap)]">
-                <SiteCardSkeleton />
-                <SiteCardSkeleton />
-                <SiteCardSkeleton />
+            <DemoBox label="Parts: TagChip (with and without remove), TagMenu, SiteCardMenu, Favicon">
+              <TagChip name="Design" onRemove={() => {}} />
+              <TagChip name="Uncategorized" />
+              <TagMenu
+                label="Edit tags"
+                current={["Video"]}
+                available={CARD_DEMO_TAGS}
+                onToggle={() => {}}
+                onCreate={() => {}}
+              />
+              <SiteCardMenu
+                title="Demo"
+                pinned={false}
+                onPinToggle={() => {}}
+                onDelete={() => {}}
+              />
+              <Favicon site={{ url: "https://vercel.com", title: "Vercel", favicon: null }} />
+              <Favicon
+                site={{ url: "https://vercel.com", title: "Vercel", favicon: null }}
+                size="lg"
+              />
+            </DemoBox>
+
+            <DemoBox label="SiteThumbnail: letter fallback">
+              <SiteThumbnail
+                className="w-48 rounded-inner"
+                site={makeDemoSite({ title: "No favicon" })}
+              />
+            </DemoBox>
+
+            <DemoBox label="Card tokens (src/style.css): --card-inset, --lift, --press-scale, --duration-fast, --duration-base, --thumb-aspect, --shadow-outline">
+              <div className="rounded-inner bg-surface-inner p-3 shadow-outline text-[var(--text-xs)] text-muted-foreground">
+                shadow-outline
               </div>
             </DemoBox>
           </Section>
