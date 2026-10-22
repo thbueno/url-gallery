@@ -121,8 +121,8 @@ const skeletonLayoutCss = `
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    /* Same size as the Button primitive's Tailwind text-sm, so the swap does not reflow. */
-    font-size: 0.875rem;
+    /* Same token as the Button primitive's label, so the swap does not reflow. */
+    font-size: var(--text-button);
     font-weight: 500;
   }`
 

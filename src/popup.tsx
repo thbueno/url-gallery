@@ -3,11 +3,7 @@ import "@/store/themeStore"
 
 import { useLayoutEffect } from "react"
 
-import { PermissionPrompt } from "@/components/popup/PermissionPrompt"
-import { PopupHeader } from "@/components/popup/PopupHeader"
-import { PopupNote } from "@/components/popup/PopupNote"
-import { SaveButton } from "@/components/popup/SaveButton"
-import { Separator } from "@/components/ui/separator"
+import { PopupBody } from "@/components/popup/PopupBody"
 import { usePopupSave } from "@/hooks/usePopupSave"
 
 export default function Popup() {
@@ -17,6 +13,7 @@ export default function Popup() {
     saveState,
     saveError,
     alreadySavedOnOpen,
+    isSaved,
     showPermPrompt,
     handleOpenGallery,
     handleGrantPermission,
@@ -31,28 +28,19 @@ export default function Popup() {
   }, [])
 
   return (
-    <div className="flex w-[300px] flex-col gap-3 bg-background p-4 text-foreground">
-      <PopupHeader fullThumbnails={permGranted} onOpenGallery={handleOpenGallery} />
-
-      <Separator className="bg-separator" />
-
-      <SaveButton state={saveState} onClick={handleSaveTab} />
-
-      {/* Post-save feedback — shown only after a save made in this session */}
-      {saveState === "saved-favicon" && !alreadySavedOnOpen && (
-        <PopupNote>
-          {showPermPrompt
-            ? "Saved with the page icon as its thumbnail. Enable better thumbnails below for a richer preview."
-            : "Saved with the page icon as its thumbnail."}
-        </PopupNote>
-      )}
-
-      {saveState === "error" && saveError && <PopupNote tone="error">{saveError}</PopupNote>}
-
-      {showPermPrompt && <PermissionPrompt onGrant={handleGrantPermission} />}
-
-      {/* After decline — one quiet acknowledgment */}
-      {permDeclined && <PopupNote>Using page icons as thumbnails.</PopupNote>}
+    <div className="w-[300px] bg-background p-4 text-foreground">
+      <PopupBody
+        saveState={saveState}
+        isSaved={isSaved}
+        saveError={saveError}
+        permGranted={permGranted}
+        permDeclined={permDeclined}
+        showPermPrompt={showPermPrompt}
+        alreadySavedOnOpen={alreadySavedOnOpen}
+        onOpenGallery={handleOpenGallery}
+        onGrantPermission={handleGrantPermission}
+        onSave={handleSaveTab}
+      />
     </div>
   )
 }

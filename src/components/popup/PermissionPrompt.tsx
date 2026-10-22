@@ -15,7 +15,7 @@ export function PermissionPrompt({ onGrant, className }: PermissionPromptProps) 
       <p className="text-[length:var(--text-xs)] leading-snug text-muted-foreground">
         Enable richer thumbnails by granting access to fetch preview images.
       </p>
-      <Button variant="outline" size="sm" className="w-full" onClick={onGrant}>
+      <Button variant="outline" size="sm" onClick={onGrant}>
         <ShieldCheck aria-hidden="true" />
         Enable better thumbnails
       </Button>

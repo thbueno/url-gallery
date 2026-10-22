@@ -121,6 +121,8 @@
     --text-xl: 1.25rem; /* 20px */
     --text-2xl: 1.5rem; /* 24px */
     --text-3xl: 1.875rem; /* 30px */
+    /* Button primitive label size (14px). Kept separate from --text-sm so buttons stay 14px. */
+    --text-button: 0.875rem; /* 14px */
 
     /* ── Letter spacing ───────────────────────────────────────────── */
     --tracking-normal: 0em;

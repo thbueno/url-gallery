@@ -20,8 +20,7 @@ export type SaveState = "idle" | "saving" | "saved-full" | "saved-favicon" | "er
 
 /**
  * All of the toolbar popup's state and save behaviour (permission check, "already saved" lookup,
- * metadata extraction, SAVE_REQUEST message). Shared by the real popup and the dev-only prototype
- * popup so both save through exactly the same code.
+ * metadata extraction, SAVE_REQUEST message).
  */
 export function usePopupSave() {
   const [permGranted, setPermGranted] = useState(false)

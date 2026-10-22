@@ -1,30 +1,40 @@
+import { type VariantProps, cva } from "class-variance-authority"
 import { Bookmark } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import type { SaveState } from "@/hooks/usePopupSave"
 import { cn } from "@/lib/utils"
 
-interface SaveButtonProps {
-  state: SaveState
+const bookmarkIconVariants = cva("", {
+  variants: {
+    saved: {
+      true: "fill-current",
+      false: "",
+    },
+  },
+  defaultVariants: { saved: false },
+})
+
+interface SaveButtonProps extends VariantProps<typeof bookmarkIconVariants> {
+  /** True while a save is in flight (disables the button). */
+  saving: boolean
   onClick: () => void
   className?: string
 }
 
 /**
- * Full-width primary action. Gradient while the page is unsaved (idle, saving, error);
+ * Primary save action. Gradient while the page is unsaved (idle, saving, error);
  * a quiet bordered control with a filled bookmark once saved.
  */
-export function SaveButton({ state, onClick, className }: SaveButtonProps) {
-  const saved = state === "saved-full" || state === "saved-favicon"
+export function SaveButton({ saved, saving, onClick, className }: SaveButtonProps) {
   return (
     <Button
       variant={saved ? "outline" : "gradient"}
-      className={cn("w-full", className)}
-      disabled={state === "saving"}
+      className={className}
+      disabled={saving}
       onClick={onClick}
     >
-      <Bookmark className={cn(saved && "fill-current")} aria-hidden="true" />
-      {state === "saving" ? "Saving…" : saved ? "Saved!" : "Save this tab"}
+      <Bookmark className={cn(bookmarkIconVariants({ saved }))} aria-hidden="true" />
+      {saving ? "Saving…" : saved ? "Saved!" : "Save this tab"}
     </Button>
   )
 }
