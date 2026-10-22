@@ -28,7 +28,10 @@ interface SiteCardMenuProps {
   className?: string
 }
 
-/** Small "more" menu with Pin/Unpin and Delete. Delete asks for confirmation first. */
+/**
+ * Small "more" menu with Pin/Unpin and Delete. Delete asks for confirmation first.
+ * The parent decides whether to render it at all (pass at least one action).
+ */
 export function SiteCardMenu({
   title,
   pinned,
@@ -37,8 +40,6 @@ export function SiteCardMenu({
   className,
 }: SiteCardMenuProps) {
   const [confirmOpen, setConfirmOpen] = useState(false)
-
-  if (!onPinToggle && !onDelete) return null
 
   return (
     <>

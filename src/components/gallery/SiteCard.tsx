@@ -1,3 +1,4 @@
+import { cva } from "class-variance-authority"
 import { CheckIcon, PinIcon } from "lucide-react"
 
 import { Favicon } from "@/components/gallery/Favicon"
@@ -8,8 +9,41 @@ import { TagMenu } from "@/components/gallery/TagMenu"
 import { ALL_TAGS, UNCATEGORIZED } from "@/lib/categorizer"
 import { getDomain, timeAgo } from "@/lib/format"
 import type { SavedSite } from "@/lib/store"
-import { toggleTag, withTag } from "@/lib/tags"
+import { displayTags, toggleTag, withTag } from "@/lib/tags"
 import { cn } from "@/lib/utils"
+
+const cardVariants = cva(
+  [
+    "group relative flex w-full flex-col rounded-card bg-surface-section p-card-inset text-left",
+    "transition-colors duration-base ease-out hover:bg-surface-tertiary",
+    "motion-reduce:transition-none",
+  ],
+  {
+    variants: {
+      selected: {
+        true: "ring-2 ring-ring ring-offset-2 ring-offset-background",
+        false: "",
+      },
+    },
+    defaultVariants: { selected: false },
+  }
+)
+
+const checkBadgeVariants = cva(
+  [
+    "flex size-6 items-center justify-center rounded-md border shadow-xs backdrop-blur-sm",
+    "transition-colors duration-fast ease-out motion-reduce:transition-none",
+  ],
+  {
+    variants: {
+      selected: {
+        true: "border-transparent bg-primary-gradient text-primary-foreground",
+        false: "border-border bg-surface-inner/90 text-transparent group-hover:border-border-hover",
+      },
+    },
+    defaultVariants: { selected: false },
+  }
+)
 
 interface SiteCardProps {
   site: SavedSite
@@ -27,8 +61,9 @@ interface SiteCardProps {
 
 /**
  * Grey section card, no border or shadow. The thumbnail sits inset by --card-inset and lifts on
- * hover. The card is a plain container: the thumbnail + title is the one button (open / select),
- * and the tag row and "more" menu are siblings of it, so they never open the site.
+ * hover. The thumbnail + title is the one button (open / select); its ::after stretches over the
+ * whole card so any spot on the card opens the site. The tag controls and "more" menu are siblings
+ * of that button, raised above the stretch with z-10, so they stay separate controls.
  * Parents own placement and size.
  */
 export function SiteCard({
@@ -44,6 +79,9 @@ export function SiteCard({
   onToggleSelect,
 }: SiteCardProps) {
   const domain = getDomain(site.url)
+  // Tag editing and the "more" menu are off while selecting.
+  const editTags = selectMode ? undefined : onTagsChange
+  const hasMenu = !selectMode && !!(onPinToggle || onDelete)
 
   function handleCardClick() {
     if (selectMode) {
@@ -54,25 +92,17 @@ export function SiteCard({
   }
 
   return (
-    <div
-      className={cn(
-        "group relative flex w-full flex-col rounded-card bg-surface-section p-card-inset text-left",
-        "transition-colors duration-base ease-out hover:bg-surface-tertiary",
-        "motion-reduce:transition-none",
-        selected && "ring-2 ring-ring ring-offset-2 ring-offset-background",
-        className
-      )}
-    >
+    <div className={cn(cardVariants({ selected: !!selected }), className)}>
       <button
         type="button"
         onClick={handleCardClick}
         aria-pressed={selectMode ? !!selected : undefined}
         title={site.title}
         className={cn(
-          "flex w-full cursor-pointer flex-col rounded-inner text-left outline-none",
-          "transition-transform duration-fast ease-out active:scale-press",
-          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          "motion-reduce:transition-none motion-reduce:active:scale-100"
+          // Not positioned and not transformed, so the ::after below stretches to the card root.
+          "group/open flex w-full cursor-pointer flex-col rounded-inner text-left outline-none",
+          "after:absolute after:inset-0 after:rounded-card",
+          "focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2 focus-visible:after:ring-offset-background"
         )}
       >
         {/* Lifts as one piece: thumbnail plus the select and pin badges on it. */}
@@ -80,24 +110,15 @@ export function SiteCard({
           className={cn(
             "relative rounded-inner shadow-2xs",
             "transition-[transform,box-shadow] duration-base ease-out",
-            "group-hover:-translate-y-lift group-hover:shadow-md",
-            "motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
+            "group-hover:-translate-y-lift group-hover:shadow-md group-active/open:scale-press",
+            "motion-reduce:transition-none motion-reduce:group-hover:translate-y-0 motion-reduce:group-active/open:scale-100"
           )}
         >
           <SiteThumbnail site={site} className="rounded-inner" />
           {selectMode || site.pinned ? (
             <div className="absolute left-2 top-2 flex items-center gap-1">
               {selectMode ? (
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "flex size-6 items-center justify-center rounded-md border shadow-xs backdrop-blur-sm",
-                    "transition-colors duration-fast ease-out motion-reduce:transition-none",
-                    selected
-                      ? "border-transparent bg-primary-gradient text-primary-foreground"
-                      : "border-border bg-surface-inner/90 text-transparent group-hover:border-border-hover"
-                  )}
-                >
+                <span aria-hidden="true" className={checkBadgeVariants({ selected: !!selected })}>
                   <CheckIcon className="size-3.5" strokeWidth={3} />
                 </span>
               ) : null}
@@ -127,33 +148,33 @@ export function SiteCard({
       </button>
 
       <div className="flex flex-wrap items-center gap-1 px-2 pb-2 pt-0.5">
-        {site.tags.map((tag) => (
+        {displayTags(site.tags).map((tag) => (
           <TagChip
             key={tag}
             name={tag}
             onRemove={
-              onTagsChange && tag !== UNCATEGORIZED
-                ? () => onTagsChange(site, toggleTag(site.tags, tag))
+              editTags && tag !== UNCATEGORIZED
+                ? () => editTags(site, toggleTag(site.tags, tag))
                 : undefined
             }
           />
         ))}
-        {onTagsChange ? (
+        {editTags ? (
           <TagMenu
             label={`Edit tags for ${site.title}`}
             current={site.tags}
             available={availableTags ?? ALL_TAGS}
-            onToggle={(tag) => onTagsChange(site, toggleTag(site.tags, tag))}
-            onCreate={(name) => onTagsChange(site, withTag(site.tags, name))}
+            onToggle={(tag) => editTags(site, toggleTag(site.tags, tag))}
+            onCreate={(name) => editTags(site, withTag(site.tags, name))}
           />
         ) : null}
       </div>
 
       {/* Floating "more" menu: shows on hover, keyboard focus, or while open. Hidden when selecting. */}
-      {!selectMode && (onPinToggle || onDelete) ? (
+      {hasMenu ? (
         <div
           className={cn(
-            "absolute right-card-inset top-card-inset p-2",
+            "absolute right-card-inset top-card-inset z-10 p-2",
             "opacity-0 transition-opacity duration-fast ease-out motion-reduce:transition-none",
             "group-hover:opacity-100 group-focus-within:opacity-100 has-[[data-state=open]]:opacity-100"
           )}

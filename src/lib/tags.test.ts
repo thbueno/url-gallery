@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { UNCATEGORIZED } from "@/lib/categorizer"
-import { normalizeTagName, toggleTag, withTag, withoutTag } from "@/lib/tags"
+import { displayTags, normalizeTagName, toggleTag, withTag, withoutTag } from "@/lib/tags"
 
 describe("withTag", () => {
   it("appends a new tag", () => {
@@ -39,6 +39,16 @@ describe("withoutTag", () => {
 
   it("keeps Uncategorized when asked to remove it from an Uncategorized site", () => {
     expect(withoutTag([UNCATEGORIZED], UNCATEGORIZED)).toEqual([UNCATEGORIZED])
+  })
+})
+
+describe("displayTags", () => {
+  it("shows Uncategorized for a site with no tags", () => {
+    expect(displayTags([])).toEqual([UNCATEGORIZED])
+  })
+
+  it("returns real tags unchanged", () => {
+    expect(displayTags(["Docs", "Design"])).toEqual(["Docs", "Design"])
   })
 })
 

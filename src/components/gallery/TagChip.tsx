@@ -1,7 +1,15 @@
+import { cva } from "class-variance-authority"
 import { XIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+
+const tagChipVariants = cva("min-w-0 max-w-full gap-1", {
+  variants: {
+    removable: { true: "pr-1.5", false: "" },
+  },
+  defaultVariants: { removable: false },
+})
 
 interface TagChipProps {
   name: string
@@ -13,10 +21,7 @@ interface TagChipProps {
 /** One neutral tag chip (ADR 0010). Parents own placement. */
 export function TagChip({ name, onRemove, className }: TagChipProps) {
   return (
-    <Badge
-      variant="tag"
-      className={cn("min-w-0 max-w-full gap-1", onRemove && "pr-1.5", className)}
-    >
+    <Badge variant="tag" className={cn(tagChipVariants({ removable: !!onRemove }), className)}>
       <span className="truncate">{name}</span>
       {onRemove ? (
         <button
@@ -24,7 +29,7 @@ export function TagChip({ name, onRemove, className }: TagChipProps) {
           aria-label={`Remove tag ${name}`}
           onClick={onRemove}
           className={cn(
-            "-my-0.5 flex size-4 shrink-0 items-center justify-center rounded-sm opacity-60 outline-none",
+            "relative z-10 -my-0.5 flex size-4 shrink-0 items-center justify-center rounded-sm opacity-60 outline-none",
             "transition-[opacity,background-color,transform] duration-fast ease-out",
             "hover:bg-foreground/10 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring",
             "active:scale-press motion-reduce:transition-none motion-reduce:active:scale-100"

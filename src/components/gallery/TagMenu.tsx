@@ -56,7 +56,7 @@ export function TagMenu({
           type="button"
           aria-label={label}
           className={cn(
-            "flex size-5 shrink-0 items-center justify-center rounded-sm border border-dashed text-muted-foreground outline-none",
+            "relative z-10 flex size-5 shrink-0 items-center justify-center rounded-sm border border-dashed text-muted-foreground outline-none",
             "transition-[color,background-color,border-color,transform] duration-fast ease-out",
             "hover:border-border-hover hover:bg-surface-inner hover:text-foreground",
             "focus-visible:ring-2 focus-visible:ring-ring active:scale-press",

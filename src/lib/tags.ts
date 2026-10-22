@@ -12,6 +12,11 @@ export function withoutTag(tags: string[], tag: string): string[] {
   return next.length === 0 ? [UNCATEGORIZED] : next
 }
 
+/** Tags to show on a card: a site with no tags reads as "Uncategorized". */
+export function displayTags(tags: string[]): string[] {
+  return tags.length === 0 ? [UNCATEGORIZED] : tags
+}
+
 export function toggleTag(tags: string[], tag: string): string[] {
   return tags.includes(tag) ? withoutTag(tags, tag) : withTag(tags, tag)
 }

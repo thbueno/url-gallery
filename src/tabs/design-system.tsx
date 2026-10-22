@@ -913,7 +913,7 @@ export default function DesignSystem() {
               />
             </DemoBox>
 
-            <DemoBox label="Card tokens (src/style.css): --card-inset 6px, --lift 2px, --press-scale 0.98, --duration-fast 150ms, --duration-base 200ms, --thumb-aspect 16 / 10, --shadow-outline">
+            <DemoBox label="Card tokens (src/style.css): --card-inset, --lift, --press-scale, --duration-fast, --duration-base, --thumb-aspect, --shadow-outline">
               <div className="rounded-inner bg-surface-inner p-3 shadow-outline text-[var(--text-xs)] text-muted-foreground">
                 shadow-outline
               </div>

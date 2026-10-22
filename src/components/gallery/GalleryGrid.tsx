@@ -1,6 +1,6 @@
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { AnimatePresence, motion } from "framer-motion"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { GalleryEmptyState } from "@/components/gallery/GalleryEmptyState"
 import { GallerySkeleton } from "@/components/gallery/GallerySkeleton"
@@ -8,6 +8,21 @@ import { SiteCard } from "@/components/gallery/SiteCard"
 import { CARD_GAP, MIN_CARD_WIDTH, useColumnCount } from "@/hooks/useColumnCount"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
+
+// Rough heights (px) of a card around its thumbnail, only used for the first-paint row estimate:
+// card padding on both sides, the title + domain block, and the tag row. Rows are measured once drawn.
+const CARD_PADDING_Y = 12
+const CARD_TEXT_HEIGHT = 58
+const CARD_TAG_ROW_HEIGHT = 30
+const FALLBACK_THUMB_ASPECT = 16 / 10
+
+/** Thumbnail width / height from the --thumb-aspect token ("16 / 10"), or the fallback. */
+function readThumbAspect(): number {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue("--thumb-aspect")
+  const [w, h] = raw.split("/").map((part) => Number.parseFloat(part))
+  const ratio = w && h ? w / h : Number.NaN
+  return Number.isFinite(ratio) && ratio > 0 ? ratio : FALLBACK_THUMB_ASPECT
+}
 
 interface GalleryGridProps {
   sites: SavedSite[]
@@ -52,12 +67,18 @@ export function GalleryGrid({
   const isFirstActiveTags = useRef(true)
   const [filterVersion, setFilterVersion] = useState(0)
 
+  const thumbAspect = useMemo(readThumbAspect, [])
+
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => scrollRef.current,
-    // Estimate: 16:10 thumbnail + title/domain rows + tag row + card padding at MIN_CARD_WIDTH, plus the
-    // gap. measureElement refines it once rows render.
-    estimateSize: () => Math.round((MIN_CARD_WIDTH * 10) / 16) + 112 + CARD_GAP,
+    // Estimate at MIN_CARD_WIDTH; measureElement refines it once rows render.
+    estimateSize: () =>
+      Math.round(MIN_CARD_WIDTH / thumbAspect) +
+      CARD_PADDING_Y +
+      CARD_TEXT_HEIGHT +
+      CARD_TAG_ROW_HEIGHT +
+      CARD_GAP,
     overscan: 3,
   })
 
