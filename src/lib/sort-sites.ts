@@ -1,6 +1,12 @@
 import type { SavedSite } from "@/lib/store"
 
-export type SortOrder = "savedAt" | "openCount"
+const SORT_ORDERS = ["savedAt", "openCount"] as const
+
+export type SortOrder = (typeof SORT_ORDERS)[number]
+
+export function isSortOrder(value: unknown): value is SortOrder {
+  return SORT_ORDERS.some((order) => order === value)
+}
 
 /** Choices offered by the header sort menu. */
 export const SORT_OPTIONS: { value: SortOrder; label: string }[] = [

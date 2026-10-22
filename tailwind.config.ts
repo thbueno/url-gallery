@@ -103,6 +103,11 @@ const config: Config = {
       spacing: {
         sidebar: "var(--sidebar-width)",
       },
+      // Window-width breakpoints for the gallery header (issue #64).
+      screens: {
+        wide: "1200px",
+        narrow: { max: "899px" },
+      },
     },
   },
   plugins: [tailwindcssAnimate],

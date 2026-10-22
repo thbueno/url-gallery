@@ -4,27 +4,25 @@ if (process.env.NODE_ENV === "development") {
   import("react-grab")
 }
 
-import { ListChecksIcon, SearchIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { BulkActionBar } from "@/components/gallery/BulkActionBar"
 import { DataMenu } from "@/components/gallery/DataMenu"
 import { GalleryGrid } from "@/components/gallery/GalleryGrid"
 import { GalleryHeader } from "@/components/gallery/GalleryHeader"
-import { NavRow } from "@/components/gallery/NavRow"
 import { OverviewPlaceholder } from "@/components/gallery/OverviewPlaceholder"
 import { PermissionBanner } from "@/components/gallery/PermissionBanner"
 import { PinnedTagChips } from "@/components/gallery/PinnedTagChips"
 import { SearchBox } from "@/components/gallery/SearchBox"
 import { SeedDbButton } from "@/components/gallery/SeedDbButton"
+import { SelectModeButton } from "@/components/gallery/SelectModeButton"
 import { SidebarFooter } from "@/components/gallery/SidebarFooter"
 import { SidebarNav } from "@/components/gallery/SidebarNav"
+import { SidebarRail } from "@/components/gallery/SidebarRail"
 import { SidebarShell } from "@/components/gallery/SidebarShell"
 import { SortMenu } from "@/components/gallery/SortMenu"
 import { TagList } from "@/components/gallery/TagList"
 import { ThemeToggle } from "@/components/gallery/ThemeToggle"
-import { headerButtonVariants } from "@/components/gallery/header-button"
-import { Button } from "@/components/ui/button"
 import { useBackupActions } from "@/hooks/useBackupActions"
 import { useBulkSelection } from "@/hooks/useBulkSelection"
 import { useGalleryPage } from "@/hooks/useGalleryPage"
@@ -55,7 +53,7 @@ export default function GalleryPage() {
 
   const [showPermissionBanner, setShowPermissionBanner] = useState(false)
   const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed()
-  const [page, setPage] = useGalleryPage()
+  const { page, setPage, selectTags, changeSearch, navigate } = useGalleryPage()
 
   const tagList = useGalleryTags()
   const siteActions = useSiteActions()
@@ -78,32 +76,18 @@ export default function GalleryPage() {
 
   useSiteSavedRefresh(load)
 
-  function selectTags(tags: string[]) {
-    setPage("gallery")
-    return setActiveTags(tags)
-  }
-
-  function changeSearch(value: string) {
-    if (value.trim()) setPage("gallery")
-    return setSearchQuery(value)
-  }
-
-  function goToGallery() {
-    setPage("gallery")
-    // Clicking "Gallery" while already on it resets the tag filter.
-    if (page === "gallery" && activeTags.length > 0) void setActiveTags([])
-  }
-
   return (
     <div className="flex h-screen gap-3 overflow-hidden bg-background p-3 text-foreground">
       <SidebarShell
         collapsed={sidebarCollapsed}
         onToggleCollapsed={toggleSidebar}
         rail={
-          <div className="flex flex-col gap-0.5">
-            <NavRow compact label="Search" icon={<SearchIcon />} onClick={toggleSidebar} />
-            <SidebarNav compact page={page} totalSites={totalSites} onPageChange={setPage} />
-          </div>
+          <SidebarRail
+            page={page}
+            totalSites={totalSites}
+            onPageChange={setPage}
+            onSearch={toggleSidebar}
+          />
         }
         footer={
           <SidebarFooter status={backup.status}>
@@ -127,7 +111,7 @@ export default function GalleryPage() {
           className="px-0.5"
           page={page}
           totalSites={totalSites}
-          onPageChange={(next) => (next === "gallery" ? goToGallery() : setPage(next))}
+          onPageChange={navigate}
         />
         <TagList
           className="min-h-0 flex-1"
@@ -174,15 +158,10 @@ export default function GalleryPage() {
                 )
               }
               end={
-                <Button
-                  variant="outline"
-                  aria-pressed={selection.selectMode}
-                  onClick={selection.toggleSelectMode}
-                  className={headerButtonVariants({ pressed: selection.selectMode })}
-                >
-                  <ListChecksIcon className="text-muted-foreground" aria-hidden="true" />
-                  {selection.selectMode ? "Cancel" : "Select"}
-                </Button>
+                <SelectModeButton
+                  selectMode={selection.selectMode}
+                  onToggle={selection.toggleSelectMode}
+                />
               }
             />
 

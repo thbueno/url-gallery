@@ -1,6 +1,7 @@
 import { SearchIcon, XIcon } from "lucide-react"
 
-import { Input } from "@/components/ui/input"
+import { SidebarIconButton } from "@/components/gallery/SidebarIconButton"
+import { SidebarInput } from "@/components/gallery/SidebarInput"
 import { cn } from "@/lib/utils"
 
 interface SearchBoxProps {
@@ -17,7 +18,7 @@ export function SearchBox({ value, onChange, className }: SearchBoxProps) {
         aria-hidden="true"
         className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
       />
-      <Input
+      <SidebarInput
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
@@ -25,17 +26,16 @@ export function SearchBox({ value, onChange, className }: SearchBoxProps) {
         }}
         placeholder="Search sites"
         aria-label="Search sites"
-        className="h-9 rounded-inner border-border bg-surface-inner pl-8 pr-8 text-sm shadow-xs transition-[border-color,box-shadow] duration-150 ease-out hover:border-border-hover focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+        className="pl-8 pr-8"
       />
       {value && (
-        <button
-          type="button"
+        <SidebarIconButton
           onClick={() => onChange("")}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2"
           aria-label="Clear search"
         >
-          <XIcon size={14} />
-        </button>
+          <XIcon />
+        </SidebarIconButton>
       )}
     </div>
   )

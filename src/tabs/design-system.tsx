@@ -8,10 +8,12 @@ import {
   GridIcon,
   LayersIcon,
   LayoutGridIcon,
-  ListChecksIcon,
   PaletteIcon,
-  SearchIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
+  PlusIcon,
   TagIcon,
+  Trash2Icon,
   TypeIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -22,19 +24,23 @@ import { GalleryEmptyState } from "@/components/gallery/GalleryEmptyState"
 import { GalleryGrid } from "@/components/gallery/GalleryGrid"
 import { GalleryHeader } from "@/components/gallery/GalleryHeader"
 import { GallerySkeleton } from "@/components/gallery/GallerySkeleton"
+import { HeaderButton } from "@/components/gallery/HeaderButton"
 import { NavRow } from "@/components/gallery/NavRow"
 import { OverviewPlaceholder } from "@/components/gallery/OverviewPlaceholder"
 import { PermissionBanner } from "@/components/gallery/PermissionBanner"
 import { PinnedTagChips } from "@/components/gallery/PinnedTagChips"
 import { SearchBox } from "@/components/gallery/SearchBox"
 import { SeedDbButton } from "@/components/gallery/SeedDbButton"
+import { SelectModeButton } from "@/components/gallery/SelectModeButton"
 import { SidebarFooter } from "@/components/gallery/SidebarFooter"
+import { SidebarIconButton } from "@/components/gallery/SidebarIconButton"
+import { SidebarInput } from "@/components/gallery/SidebarInput"
 import { SidebarNav } from "@/components/gallery/SidebarNav"
+import { SidebarRail } from "@/components/gallery/SidebarRail"
 import { SidebarShell } from "@/components/gallery/SidebarShell"
 import { SortMenu } from "@/components/gallery/SortMenu"
 import { TagList } from "@/components/gallery/TagList"
 import { ThemeToggle } from "@/components/gallery/ThemeToggle"
-import { headerButtonVariants } from "@/components/gallery/header-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -323,18 +329,27 @@ function GalleryComponentsDemo() {
               onSelect={setActive}
             />
           }
-          end={
-            <Button
-              variant="outline"
-              aria-pressed={selectOn}
-              onClick={() => setSelectOn((v) => !v)}
-              className={headerButtonVariants({ pressed: selectOn })}
-            >
-              <ListChecksIcon className="text-muted-foreground" aria-hidden="true" />
-              {selectOn ? "Cancel" : "Select"}
-            </Button>
-          }
+          end={<SelectModeButton selectMode={selectOn} onToggle={() => setSelectOn((v) => !v)} />}
         />
+      </DemoBox>
+
+      <DemoBox label="HeaderButton (idle, pressed) — SidebarIconButton (sm, destructive, md, lg) — SidebarInput (md, sm)">
+        <HeaderButton>Idle</HeaderButton>
+        <HeaderButton pressed>Pressed</HeaderButton>
+        <SidebarIconButton aria-label="Add">
+          <PlusIcon />
+        </SidebarIconButton>
+        <SidebarIconButton tone="destructive" aria-label="Delete">
+          <Trash2Icon />
+        </SidebarIconButton>
+        <SidebarIconButton size="md" aria-label="Collapse">
+          <PanelLeftCloseIcon />
+        </SidebarIconButton>
+        <SidebarIconButton size="lg" aria-label="Expand">
+          <PanelLeftOpenIcon />
+        </SidebarIconButton>
+        <SidebarInput className="w-40" placeholder="Search sites" />
+        <SidebarInput size="sm" className="w-40" placeholder="New tag name…" />
       </DemoBox>
 
       <DemoBox label="SearchBox (sidebar search field)">
@@ -427,10 +442,12 @@ function GalleryComponentsDemo() {
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((c) => !c)}
           rail={
-            <div className="flex flex-col gap-0.5">
-              <NavRow compact label="Search" icon={<SearchIcon />} onClick={() => {}} />
-              <SidebarNav compact page="gallery" totalSites={15} onPageChange={() => {}} />
-            </div>
+            <SidebarRail
+              page="gallery"
+              totalSites={15}
+              onPageChange={() => {}}
+              onSearch={() => setCollapsed(false)}
+            />
           }
           footer={
             <SidebarFooter status="Backup downloaded">

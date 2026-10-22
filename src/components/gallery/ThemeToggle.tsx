@@ -1,21 +1,11 @@
-import { cva } from "class-variance-authority"
 import { MoonIcon, SunIcon } from "lucide-react"
 
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { cn } from "@/lib/utils"
 import { useThemeStore } from "@/store/themeStore"
 
-const segmentVariants = cva(
-  "flex h-7 flex-1 items-center justify-center gap-1.5 rounded-md text-xs font-medium outline-none transition-[background-color,color,box-shadow] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
-  {
-    variants: {
-      active: {
-        true: "bg-surface-inner text-foreground shadow-2xs",
-        false: "text-muted-foreground hover:text-foreground",
-      },
-    },
-    defaultVariants: { active: false },
-  }
-)
+const segmentClass =
+  "h-7 min-w-0 flex-1 gap-1.5 px-0 text-xs text-muted-foreground transition-[background-color,color,box-shadow] duration-150 ease-out hover:bg-transparent hover:text-foreground focus-visible:ring-2 motion-reduce:transition-none data-[state=on]:bg-surface-inner data-[state=on]:text-foreground data-[state=on]:shadow-2xs [&_svg]:size-3.5"
 
 interface ThemeToggleProps {
   className?: string
@@ -26,30 +16,25 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
   const theme = useThemeStore((s) => s.theme)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
 
-  function choose(next: "light" | "dark") {
-    if (next !== theme) toggleTheme()
-  }
-
   return (
-    <div className={cn("flex gap-0.5 rounded-inner bg-surface-tertiary p-0.5", className)}>
-      <button
-        type="button"
-        onClick={() => choose("light")}
-        aria-pressed={theme === "light"}
-        className={segmentVariants({ active: theme === "light" })}
-      >
-        <SunIcon className="size-3.5" aria-hidden="true" />
+    <ToggleGroup
+      type="single"
+      aria-label="Theme"
+      value={theme}
+      // Clicking the active segment reports "", which must not flip the theme.
+      onValueChange={(next) => {
+        if (next && next !== theme) toggleTheme()
+      }}
+      className={cn("gap-0.5 rounded-inner bg-surface-tertiary p-0.5", className)}
+    >
+      <ToggleGroupItem value="light" className={segmentClass}>
+        <SunIcon aria-hidden="true" />
         Light
-      </button>
-      <button
-        type="button"
-        onClick={() => choose("dark")}
-        aria-pressed={theme === "dark"}
-        className={segmentVariants({ active: theme === "dark" })}
-      >
-        <MoonIcon className="size-3.5" aria-hidden="true" />
+      </ToggleGroupItem>
+      <ToggleGroupItem value="dark" className={segmentClass}>
+        <MoonIcon aria-hidden="true" />
         Dark
-      </button>
-    </div>
+      </ToggleGroupItem>
+    </ToggleGroup>
   )
 }

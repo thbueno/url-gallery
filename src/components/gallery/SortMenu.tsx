@@ -1,7 +1,6 @@
 import { ChevronsUpDownIcon } from "lucide-react"
 
-import { headerButtonVariants } from "@/components/gallery/header-button"
-import { Button } from "@/components/ui/button"
+import { HeaderButton } from "@/components/gallery/HeaderButton"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,8 +8,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { SORT_OPTIONS, type SortOrder } from "@/lib/sort-sites"
-import { cn } from "@/lib/utils"
+import { SORT_OPTIONS, type SortOrder, isSortOrder } from "@/lib/sort-sites"
 
 interface SortMenuProps {
   value: SortOrder
@@ -25,18 +23,14 @@ export function SortMenu({ value, onChange, className }: SortMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          aria-label={`Sort: ${label}`}
-          className={cn(headerButtonVariants(), className)}
-        >
-          <span className="text-muted-foreground max-[899px]:sr-only">Sort</span>
+        <HeaderButton aria-label={`Sort: ${label}`} className={className}>
+          <span className="text-muted-foreground narrow:sr-only">Sort</span>
           {label}
           <ChevronsUpDownIcon className="text-muted-foreground" aria-hidden="true" />
-        </Button>
+        </HeaderButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-44">
-        <DropdownMenuRadioGroup value={value} onValueChange={(v) => onChange(v as SortOrder)}>
+        <DropdownMenuRadioGroup value={value} onValueChange={(v) => isSortOrder(v) && onChange(v)}>
           {SORT_OPTIONS.map((o) => (
             <DropdownMenuRadioItem key={o.value} value={o.value}>
               {o.label}

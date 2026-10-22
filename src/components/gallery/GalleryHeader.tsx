@@ -19,17 +19,17 @@ export function GalleryHeader({ start, center, end, className }: GalleryHeaderPr
     <header
       className={cn(
         "grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-3",
-        "min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(0,max-content)_minmax(0,1fr)] min-[1200px]:gap-x-4",
+        "wide:grid-cols-[minmax(0,1fr)_minmax(0,max-content)_minmax(0,1fr)] wide:gap-x-4",
         className
       )}
     >
-      <div className="flex min-w-0 items-center gap-2 min-[1200px]:col-start-1 min-[1200px]:row-start-1">
+      <div className="flex min-w-0 items-center gap-2 wide:col-start-1 wide:row-start-1">
         {start}
       </div>
-      <div className="col-span-2 row-start-2 flex min-w-0 justify-center empty:hidden min-[1200px]:col-span-1 min-[1200px]:col-start-2 min-[1200px]:row-start-1">
+      <div className="col-span-2 row-start-2 flex min-w-0 justify-center empty:hidden wide:col-span-1 wide:col-start-2 wide:row-start-1">
         {center}
       </div>
-      <div className="col-start-2 row-start-1 flex min-w-0 items-center justify-end gap-2 min-[1200px]:col-start-3">
+      <div className="col-start-2 row-start-1 flex min-w-0 items-center justify-end gap-2 wide:col-start-3">
         {end}
       </div>
     </header>

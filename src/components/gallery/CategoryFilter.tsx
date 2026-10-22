@@ -16,9 +16,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { cva } from "class-variance-authority"
 import { GripVerticalIcon, InfoIcon, PencilIcon, PinIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
 import { navRowVariants } from "@/components/gallery/NavRow"
+import { SidebarIconButton } from "@/components/gallery/SidebarIconButton"
+import { SidebarInput } from "@/components/gallery/SidebarInput"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +33,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 export interface TagCount {
@@ -53,7 +55,46 @@ interface CategoryFilterProps {
 }
 
 const sectionLabelClass =
-  "px-2.5 pb-1.5 pt-4 text-[length:var(--text-xs)] font-medium uppercase tracking-[0.06em] text-muted-foreground"
+  "px-2.5 pb-1.5 pt-4 text-[length:var(--text-xs)] font-medium uppercase tracking-wider text-muted-foreground"
+
+const tagRowVariants = cva("group/row relative", {
+  variants: {
+    dragging: {
+      true: "z-10 opacity-70",
+      false: "",
+    },
+  },
+  defaultVariants: { dragging: false },
+})
+
+/** Edit and pin buttons overlaid on the right side of a tag row. */
+const rowActionVariants = cva(
+  "absolute top-1/2 -translate-y-1/2 transition-[opacity,color,background-color] duration-150 focus-visible:opacity-100",
+  {
+    variants: {
+      slot: {
+        edit: "right-8",
+        pin: "right-1.5",
+      },
+      /** `hover`: shown while the row is hovered. `pinned`: always shown, in full colour. */
+      reveal: {
+        hover: "opacity-0 group-hover/row:opacity-100",
+        pinned: "text-foreground opacity-100",
+      },
+    },
+    defaultVariants: { slot: "edit", reveal: "hover" },
+  }
+)
+
+const pinIconVariants = cva("", {
+  variants: {
+    pinned: {
+      true: "fill-current",
+      false: "",
+    },
+  },
+  defaultVariants: { pinned: false },
+})
 
 const PINNED_ZONE_ID = "pinned-zone"
 const TAGS_ZONE_ID = "tags-zone"
@@ -102,15 +143,12 @@ function TagRow({
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn("group/row relative", isDragging && "z-10 opacity-70")}
-    >
+    <div ref={setNodeRef} style={style} className={tagRowVariants({ dragging: isDragging })}>
       {isEditing ? (
         <div ref={editRowRef} className="flex min-w-0 flex-1 items-center gap-1.5 py-0.5 pl-1">
-          <Input
+          <SidebarInput
             ref={editInputRef}
+            size="sm"
             value={editValue}
             onChange={(e) => onEditValueChange(e.target.value)}
             onKeyDown={(e) => {
@@ -124,17 +162,17 @@ function TagRow({
               onCommitEdit()
             }}
             disabled={busy}
-            className="h-8 min-w-0 flex-1 rounded-inner border-border bg-surface-inner px-2 text-sm shadow-xs"
+            className="min-w-0 flex-1"
           />
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <button
-                type="button"
+              <SidebarIconButton
+                tone="destructive"
                 aria-label={`Delete ${tag.name}`}
-                className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-surface-tertiary hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring"
+                className="shrink-0"
               >
-                <Trash2Icon size={14} />
-              </button>
+                <Trash2Icon />
+              </SidebarIconButton>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -182,36 +220,29 @@ function TagRow({
           </button>
 
           {/* Edit button (replaces the count while the row is hovered) */}
-          <button
-            type="button"
+          <SidebarIconButton
             onClick={(e) => {
               e.stopPropagation()
               onStartEdit()
             }}
             aria-label={`Edit ${tag.name}`}
-            className="absolute right-8 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-[opacity,color,background-color] duration-150 hover:bg-surface-tertiary hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover/row:opacity-100"
+            className={rowActionVariants({ slot: "edit", reveal: "hover" })}
           >
-            <PencilIcon className="size-3.5" />
-          </button>
+            <PencilIcon />
+          </SidebarIconButton>
 
           {/* Pin toggle: always visible while pinned, otherwise on hover */}
-          <button
-            type="button"
+          <SidebarIconButton
             onClick={(e) => {
               e.stopPropagation()
               onTogglePin()
             }}
             aria-label={pinned ? `Unpin ${tag.name}` : `Pin ${tag.name}`}
             aria-pressed={pinned}
-            className={cn(
-              "absolute right-1.5 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md outline-none transition-[opacity,color,background-color] duration-150 hover:bg-surface-tertiary hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring",
-              pinned
-                ? "text-foreground opacity-100"
-                : "text-muted-foreground opacity-0 group-hover/row:opacity-100"
-            )}
+            className={rowActionVariants({ slot: "pin", reveal: pinned ? "pinned" : "hover" })}
           >
-            <PinIcon className={cn("size-3.5", pinned && "fill-current")} />
-          </button>
+            <PinIcon className={pinIconVariants({ pinned })} />
+          </SidebarIconButton>
         </>
       )}
     </div>
@@ -386,20 +417,16 @@ export function CategoryFilter({
 
         <div className="flex items-center justify-between pr-1">
           <p className={sectionLabelClass}>Tags</p>
-          <button
-            type="button"
-            onClick={startAdd}
-            aria-label="Add tag"
-            className="mt-3 flex size-6 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-surface-tertiary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <PlusIcon className="size-3.5" />
-          </button>
+          <SidebarIconButton onClick={startAdd} aria-label="Add tag" className="mt-3">
+            <PlusIcon />
+          </SidebarIconButton>
         </div>
 
         {adding && (
           <div className="mb-1 flex items-center gap-1">
-            <Input
+            <SidebarInput
               ref={addInputRef}
+              size="sm"
               value={addValue}
               onChange={(e) => setAddValue(e.target.value)}
               onKeyDown={(e) => {
@@ -409,7 +436,7 @@ export function CategoryFilter({
               onBlur={commitAdd}
               disabled={busy}
               placeholder="New tag name…"
-              className="h-8 flex-1 rounded-inner border-border bg-surface-inner px-2 text-sm shadow-xs"
+              className="flex-1"
             />
           </div>
         )}

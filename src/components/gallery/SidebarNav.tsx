@@ -1,9 +1,8 @@
 import { ChartNoAxesColumnIcon, LayoutGridIcon } from "lucide-react"
 
 import { NavRow } from "@/components/gallery/NavRow"
+import type { GalleryPage } from "@/hooks/useGalleryPage"
 import { cn } from "@/lib/utils"
-
-export type GalleryPage = "gallery" | "overview"
 
 interface SidebarNavProps {
   page: GalleryPage

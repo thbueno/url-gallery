@@ -2,7 +2,18 @@ import { BookmarkIcon, PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-reac
 
 import { cva } from "class-variance-authority"
 
+import { SidebarIconButton } from "@/components/gallery/SidebarIconButton"
 import { cn } from "@/lib/utils"
+
+const headerVariants = cva("flex shrink-0 items-center gap-2.5", {
+  variants: {
+    collapsed: {
+      true: "",
+      false: "px-1 pt-1",
+    },
+  },
+  defaultVariants: { collapsed: false },
+})
 
 const sidebarVariants = cva(
   "flex shrink-0 flex-col gap-3 overflow-hidden rounded-card bg-surface-section p-1.5 transition-[width] duration-200 motion-reduce:transition-none",
@@ -40,7 +51,7 @@ export function SidebarShell({
 }: SidebarShellProps) {
   return (
     <aside className={cn(sidebarVariants({ collapsed }), className)}>
-      <div className={cn("flex shrink-0 items-center gap-2.5", !collapsed && "px-1 pt-1")}>
+      <div className={headerVariants({ collapsed })}>
         {!collapsed && (
           <>
             <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary-gradient text-primary-foreground shadow-primary">
@@ -51,17 +62,13 @@ export function SidebarShell({
             </span>
           </>
         )}
-        <button
-          type="button"
+        <SidebarIconButton
+          size={collapsed ? "lg" : "md"}
           onClick={onToggleCollapsed}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={cn(
-            "flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-surface-tertiary/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
-            collapsed && "size-9 rounded-inner"
-          )}
         >
-          {collapsed ? <PanelLeftOpenIcon size={16} /> : <PanelLeftCloseIcon size={16} />}
-        </button>
+          {collapsed ? <PanelLeftOpenIcon /> : <PanelLeftCloseIcon />}
+        </SidebarIconButton>
       </div>
 
       {collapsed ? rail : children}
