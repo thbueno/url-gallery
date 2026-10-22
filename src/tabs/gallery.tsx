@@ -135,12 +135,12 @@ export default function GalleryPage() {
         ) : (
           <>
             <GalleryHeader
-              className="px-4 pb-3 pt-2"
+              className="px-6 pb-3 pt-2"
               start={<SortMenu value={sortOrder} onChange={setSortOrder} />}
               center={
                 selection.selectMode ? (
                   <BulkActionBar
-                    className="max-w-2xl shrink-0"
+                    className="my-0.5 max-w-2xl shrink-0"
                     selectedCount={selection.selectedIds.size}
                     tagNames={tagList.mergedTags.map((t) => t.name)}
                     onAddTag={selection.addTagToSelected}
