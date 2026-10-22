@@ -91,11 +91,11 @@ const typeScale = [
 
 const radiusTokens = [
   { token: "--radius-sm", label: "sm · 0.6r", className: "rounded-sm" },
-  { token: "--radius", label: "base · r (14px)", className: "rounded-lg" },
-  { token: "--radius-lg", label: "lg · 1.35r", className: "rounded-[var(--radius-lg)]" },
+  { token: "--radius", label: "base · r", className: "rounded-[var(--radius)]" },
+  { token: "--radius-lg", label: "lg · 1.35r", className: "rounded-lg" },
   { token: "--radius-xl", label: "xl · 1.75r", className: "rounded-xl" },
   { token: "--radius-card", label: "card · 1.5r", className: "rounded-card" },
-  { token: "--radius-inner", label: "inner · 1.5r − 6px", className: "rounded-inner" },
+  { token: "--radius-inner", label: "inner · 1.5r − inset", className: "rounded-inner" },
 ]
 
 // ── Section shell ────────────────────────────────────────────────────────────
@@ -203,7 +203,7 @@ const DEMO_SITES = [
 
 function SiteCardPreview({ title, domain, category, favicon, thumbColor }: (typeof DEMO_SITES)[0]) {
   return (
-    <div className="group flex w-[var(--card-min-width)] flex-col overflow-hidden rounded-card border bg-card shadow-sm transition-all duration-150 hover:shadow-md hover:ring-1 hover:ring-[hsl(var(--card-hover-ring))]">
+    <div className="group flex w-[var(--card-min-width)] flex-col overflow-hidden rounded-card border bg-card shadow-sm transition-all duration-150 hover:shadow-md hover:ring-1 hover:ring-border-hover">
       {/* Thumbnail area */}
       <div className={cn("relative h-32 bg-gradient-to-br", thumbColor)}>
         <div className="absolute inset-0 flex items-center justify-center opacity-10">
@@ -424,7 +424,7 @@ export default function DesignSystem() {
                     <p className="font-mono text-[var(--text-xs)] font-medium text-foreground">
                       {label}
                     </p>
-                    <p className="font-mono text-[9px] text-muted-foreground">{token}</p>
+                    <p className="font-mono text-[var(--text-xs)] text-muted-foreground">{token}</p>
                   </div>
                 </div>
               ))}

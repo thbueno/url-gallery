@@ -87,7 +87,6 @@
     --sidebar-border: 0 0% 92.16%;
     --sidebar-ring: 216.23 100% 58.43%;
     --thumb-scrim: linear-gradient(to top, hsl(330 0% 3.94% / 0.7) 0%, transparent 60%);
-    --card-hover-ring: 60 0% 83.1444%;
 
     /* ── Chart colors ── */
     --chart-1: 173.4 100% 41.76%;
@@ -97,8 +96,8 @@
     --chart-5: 272.27 100% 73.99%;
 
     /* ── Elevation ── */
-    --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px hsl(216.23 100% 58.43%), 0
-      1px 2px 0 rgb(0 0 0 / 0.1);
+    --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px
+      hsl(var(--primary-gradient-from)), 0 1px 2px 0 rgb(0 0 0 / 0.1);
     --shadow-2xs: 0 1px rgb(0 0 0 / 0.05);
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.06), 0 1px 3px 0 rgb(0 0 0 / 0.1);
@@ -193,7 +192,6 @@
       --sidebar-border: 240 0% 25.05%;
       --sidebar-ring: 216.23 100% 58.43%;
       --thumb-scrim: linear-gradient(to top, hsl(0 0% 0% / 0.85) 0%, transparent 55%);
-      --card-hover-ring: 0 0% 45.1519%;
 
       /* ── Chart colors ── */
       --chart-1: 173.4 100% 41.76%;
@@ -203,8 +201,8 @@
       --chart-5: 272.27 100% 73.99%;
 
       /* ── Elevation ── */
-      --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px hsl(216.23 100% 58.43%),
-        0 1px 2px 0 rgb(0 0 0 / 0.1);
+      --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px
+        hsl(var(--primary-gradient-from)), 0 1px 2px 0 rgb(0 0 0 / 0.1);
       --shadow-2xs: 0 1px rgb(0 0 0 / 0.16);
       --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.18);
       --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.12), 0 1px 3px 0 rgb(0 0 0 / 0.16);
@@ -269,7 +267,6 @@
     --sidebar-border: 240 0% 25.05%;
     --sidebar-ring: 216.23 100% 58.43%;
     --thumb-scrim: linear-gradient(to top, hsl(0 0% 0% / 0.85) 0%, transparent 55%);
-    --card-hover-ring: 0 0% 45.1519%;
 
     /* ── Chart colors ── */
     --chart-1: 173.4 100% 41.76%;
@@ -279,8 +276,8 @@
     --chart-5: 272.27 100% 73.99%;
 
     /* ── Elevation ── */
-    --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px hsl(216.23 100% 58.43%), 0
-      1px 2px 0 rgb(0 0 0 / 0.1);
+    --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px
+      hsl(var(--primary-gradient-from)), 0 1px 2px 0 rgb(0 0 0 / 0.1);
     --shadow-2xs: 0 1px rgb(0 0 0 / 0.16);
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.18);
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.12), 0 1px 3px 0 rgb(0 0 0 / 0.16);
@@ -339,7 +336,6 @@
     --sidebar-border: 0 0% 92.16%;
     --sidebar-ring: 216.23 100% 58.43%;
     --thumb-scrim: linear-gradient(to top, hsl(330 0% 3.94% / 0.7) 0%, transparent 60%);
-    --card-hover-ring: 60 0% 83.1444%;
 
     /* ── Chart colors ── */
     --chart-1: 173.4 100% 41.76%;
@@ -349,8 +345,8 @@
     --chart-5: 272.27 100% 73.99%;
 
     /* ── Elevation ── */
-    --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px hsl(216.23 100% 58.43%), 0
-      1px 2px 0 rgb(0 0 0 / 0.1);
+    --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px
+      hsl(var(--primary-gradient-from)), 0 1px 2px 0 rgb(0 0 0 / 0.1);
     --shadow-2xs: 0 1px rgb(0 0 0 / 0.05);
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.06), 0 1px 3px 0 rgb(0 0 0 / 0.1);

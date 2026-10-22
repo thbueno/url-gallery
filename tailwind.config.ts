@@ -72,7 +72,7 @@ const config: Config = {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
+        lg: "var(--radius-lg)",
         md: "calc(var(--radius) - 2px)",
         sm: "var(--radius-sm)",
         xl: "var(--radius-xl)",
