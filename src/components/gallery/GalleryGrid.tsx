@@ -4,8 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react"
 
 import { GalleryEmptyState } from "@/components/gallery/GalleryEmptyState"
 import { GallerySkeleton } from "@/components/gallery/GallerySkeleton"
+import { PinnedStrip } from "@/components/gallery/PinnedStrip"
 import { SiteCard } from "@/components/gallery/SiteCard"
 import { CARD_GAP, MIN_CARD_WIDTH, useColumnCount } from "@/hooks/useColumnCount"
+import { splitPinned } from "@/lib/pinned-split"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
 
@@ -44,7 +46,7 @@ interface GalleryGridProps {
 
 /** Scrollable, row-virtualized card grid with loading and empty states. */
 export function GalleryGrid({
-  sites,
+  sites: allSites,
   isLoading,
   searchQuery,
   activeTags,
@@ -60,6 +62,11 @@ export function GalleryGrid({
   className,
 }: GalleryGridProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const filtering = searchQuery.trim() !== "" || activeTags.length > 0
+  const { strip, rest: sites } = useMemo(
+    () => splitPinned(allSites, filtering),
+    [allSites, filtering]
+  )
   const cols = useColumnCount(scrollRef)
   const rowCount = cols > 0 ? Math.ceil(sites.length / cols) : 0
 
@@ -101,8 +108,24 @@ export function GalleryGrid({
       {/* Loading skeleton or empty first-render */}
       {(isLoading || cols === 0) && <GallerySkeleton cols={cols} />}
 
+      {/* Pinned strip: scrolls with the grid; hidden while filtering or searching */}
+      {!isLoading && cols > 0 && (
+        <PinnedStrip
+          className={sites.length > 0 ? "mb-6" : undefined}
+          sites={strip}
+          availableTags={availableTags}
+          selectMode={selectMode}
+          selectedIds={selectedIds}
+          onOpenSite={onOpenSite}
+          onTagsChange={onTagsChange}
+          onPinToggle={onPinToggle}
+          onDeleteSite={onDeleteSite}
+          onToggleSelect={onToggleSelect}
+        />
+      )}
+
       {/* Empty state */}
-      {!isLoading && cols > 0 && sites.length === 0 && (
+      {!isLoading && cols > 0 && allSites.length === 0 && (
         <GalleryEmptyState
           searchQuery={searchQuery}
           activeTags={activeTags}

@@ -124,6 +124,8 @@ const config: Config = {
         narrow: { max: "899px" },
         // Floating bulk bar switches to icon-only buttons below this width (issue #67).
         compact: { max: "999px" },
+        // Pinned strip goes from 2 to 4 columns (issue #68).
+        strip: "1100px",
       },
     },
   },
