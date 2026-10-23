@@ -10,9 +10,8 @@ import { BulkActionBar } from "@/components/gallery/BulkActionBar"
 import { DataMenu } from "@/components/gallery/DataMenu"
 import { GalleryGrid } from "@/components/gallery/GalleryGrid"
 import { GalleryHeader } from "@/components/gallery/GalleryHeader"
-import { OverviewPlaceholder } from "@/components/gallery/OverviewPlaceholder"
 import { PermissionBanner } from "@/components/gallery/PermissionBanner"
-import { PinnedTagChips } from "@/components/gallery/PinnedTagChips"
+import { PinnedTagNav } from "@/components/gallery/PinnedTagNav"
 import { SearchBox } from "@/components/gallery/SearchBox"
 import { SeedDbButton } from "@/components/gallery/SeedDbButton"
 import { SelectModeButton } from "@/components/gallery/SelectModeButton"
@@ -23,13 +22,17 @@ import { SidebarShell } from "@/components/gallery/SidebarShell"
 import { SortMenu } from "@/components/gallery/SortMenu"
 import { TagList } from "@/components/gallery/TagList"
 import { ThemeToggle } from "@/components/gallery/ThemeToggle"
+import { OverviewPage } from "@/components/overview/OverviewPage"
 import { useBackupActions } from "@/hooks/useBackupActions"
 import { useBulkSelection } from "@/hooks/useBulkSelection"
 import { useGalleryPage } from "@/hooks/useGalleryPage"
 import { useGalleryTags } from "@/hooks/useGalleryTags"
+import { useOverview } from "@/hooks/useOverview"
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed"
 import { useSiteActions } from "@/hooks/useSiteActions"
 import { useSiteSavedRefresh } from "@/hooks/useSiteSavedRefresh"
+import { allPinned, tagCountsFor } from "@/lib/bulk-selection"
+import { UNCATEGORIZED } from "@/lib/categorizer"
 import { backfillThumbnails } from "@/lib/gallery-io"
 import { useGalleryStore } from "@/store/galleryStore"
 import { useTagSettingsStore } from "@/store/tagSettingsStore"
@@ -57,6 +60,7 @@ export default function GalleryPage() {
 
   const tagList = useGalleryTags()
   const siteActions = useSiteActions()
+  const overview = useOverview()
   const selection = useBulkSelection()
   const backup = useBackupActions({
     load,
@@ -129,33 +133,26 @@ export default function GalleryPage() {
         />
       </SidebarShell>
 
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {page === "overview" ? (
-          <OverviewPlaceholder className="m-1" />
+          <OverviewPage
+            className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-2"
+            stats={overview.stats}
+            onOpenSite={(site) => siteActions.openSite(site).then(overview.reload)}
+            onSeeAll={(tag) => selectTags([tag])}
+          />
         ) : (
           <>
             <GalleryHeader
               className="px-6 pb-3 pt-2"
               start={<SortMenu value={sortOrder} onChange={setSortOrder} />}
               center={
-                selection.selectMode ? (
-                  <BulkActionBar
-                    className="my-0.5 max-w-2xl shrink-0"
-                    selectedCount={selection.selectedIds.size}
-                    tagNames={tagList.mergedTags.map((t) => t.name)}
-                    onAddTag={selection.addTagToSelected}
-                    onRemoveTag={selection.removeTagFromSelected}
-                    onDelete={selection.deleteSelected}
-                    onClear={selection.clearSelection}
-                  />
-                ) : (
-                  <PinnedTagChips
-                    className="max-w-xl shrink-0"
-                    pinnedTags={pinnedTags}
-                    activeTags={activeTags}
-                    onSelect={setActiveTags}
-                  />
-                )
+                <PinnedTagNav
+                  className="max-w-xl"
+                  pinnedTags={pinnedTags}
+                  activeTags={activeTags}
+                  onSelect={setActiveTags}
+                />
               }
               end={
                 <SelectModeButton
@@ -188,6 +185,22 @@ export default function GalleryPage() {
               onToggleSelect={selection.toggleSelect}
               onClearSearch={() => setSearchQuery("")}
             />
+
+            {selection.selectMode ? (
+              <BulkActionBar
+                className="absolute bottom-6 left-1/2 z-20 max-w-[calc(100%-3rem)] -translate-x-1/2"
+                selectedCount={selection.selectedIds.size}
+                tagNames={tagList.mergedTags.map((t) => t.name)}
+                selectionTags={tagCountsFor(selection.selectedSites(), UNCATEGORIZED)}
+                allPinned={allPinned(selection.selectedSites())}
+                onAddTag={selection.addTagToSelected}
+                onRemoveTag={selection.removeTagFromSelected}
+                onTogglePin={selection.togglePinSelected}
+                onDelete={selection.deleteSelected}
+                onSelectAll={selection.selectAll}
+                onCancel={selection.exitSelectMode}
+              />
+            ) : null}
           </>
         )}
       </main>

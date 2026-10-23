@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 interface GalleryHeaderProps {
   /** Left slot, e.g. the sort menu. */
   start?: React.ReactNode
-  /** Centre slot (pinned-tag navbar, or the bulk-action bar in select mode). */
+  /** Centre slot (pinned-tag navbar). */
   center?: React.ReactNode
   /** Right slot, e.g. the select-mode toggle. */
   end?: React.ReactNode

@@ -29,6 +29,11 @@ const cardVariants = cva(
   }
 )
 
+const titleVariants = cva("truncate font-medium leading-snug text-foreground", {
+  variants: { size: { default: "text-sm", large: "text-base" } },
+  defaultVariants: { size: "default" },
+})
+
 const checkBadgeVariants = cva(
   [
     "flex size-6 items-center justify-center rounded-md border shadow-xs backdrop-blur-sm",
@@ -53,10 +58,12 @@ interface SiteCardProps {
   onDelete?: (site: SavedSite) => void
   /** Tag names the "+" menu offers. */
   availableTags?: string[]
+  /** "large" is used by the pinned strip. */
+  size?: "default" | "large"
   className?: string
   selectMode?: boolean
   selected?: boolean
-  onToggleSelect?: (site: SavedSite) => void
+  onToggleSelect?: (site: SavedSite, shiftKey: boolean) => void
 }
 
 /**
@@ -73,6 +80,7 @@ export function SiteCard({
   onPinToggle,
   onDelete,
   availableTags,
+  size = "default",
   className,
   selectMode,
   selected,
@@ -83,9 +91,9 @@ export function SiteCard({
   const editTags = selectMode ? undefined : onTagsChange
   const hasMenu = !selectMode && !!(onPinToggle || onDelete)
 
-  function handleCardClick() {
+  function handleCardClick(e: React.MouseEvent) {
     if (selectMode) {
-      onToggleSelect?.(site)
+      onToggleSelect?.(site, e.shiftKey)
     } else {
       onClick(site)
     }
@@ -136,9 +144,7 @@ export function SiteCard({
         </div>
 
         <div className="flex w-full flex-col gap-1.5 px-2 pb-1.5 pt-2.5">
-          <h3 className="truncate text-sm font-medium leading-snug text-foreground">
-            {site.title}
-          </h3>
+          <h3 className={titleVariants({ size })}>{site.title}</h3>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Favicon site={site} />
             <span className="min-w-0 flex-1 truncate">{domain}</span>

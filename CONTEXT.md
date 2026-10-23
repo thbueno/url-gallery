@@ -40,6 +40,10 @@ _Avoid_: favorited tag, bookmarked tag
 How many times the user has opened a **SavedSite** by clicking its tile in the gallery. The basis for "most used" ranking and for suggesting pins. Counts gallery opens only, not visits made elsewhere.
 _Avoid_: visits, hits, access count
 
+**Overview**:
+A page of the gallery that summarises the whole collection instead of listing it: headline numbers (how many **SavedSite**s and **Tags**, total **Open count**, how many were saved in the last 7 days), the most-opened and most recently saved sites, and one row of sites per **Tag**. Always covers every **SavedSite**, regardless of search or **Tag filter**.
+_Avoid_: dashboard, home, stats page
+
 ## Flagged ambiguities
 
 - "Gallery" was originally used for both stored favorites and browsing history. Resolved: the **gallery** is favorites-only (**SavedSite**s). **History** is a separate read-through view, never stored.
