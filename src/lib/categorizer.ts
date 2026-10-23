@@ -1,3 +1,6 @@
+/** Fallback tag for sites no rule could categorize. */
+export const UNCATEGORIZED = "Uncategorized"
+
 export const ALL_TAGS: string[] = [
   "Video",
   "Music",

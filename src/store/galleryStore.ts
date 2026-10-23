@@ -1,5 +1,7 @@
 import { create } from "zustand"
 
+import { loadSortOrder, saveSortOrder } from "@/lib/sort-preference"
+import { type SortOrder, sortSites } from "@/lib/sort-sites"
 import { type SavedSite, savedSiteStore } from "@/lib/store"
 
 export interface TagCount {
@@ -7,11 +9,11 @@ export interface TagCount {
   count: number
 }
 
-export type SortOrder = "savedAt" | "openCount"
-
 interface GalleryStore {
   sites: SavedSite[]
   tags: TagCount[]
+  /** Every saved site, ignoring search and tag filters. */
+  totalSites: number
   searchQuery: string
   activeTags: string[]
   sortOrder: SortOrder
@@ -27,32 +29,25 @@ interface GalleryStore {
   deleteTag: (name: string) => Promise<void>
 }
 
-function sortSites(sites: SavedSite[], order: SortOrder): SavedSite[] {
-  return [...sites].sort((a, b) => {
-    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-    if (order === "openCount") return b.openCount - a.openCount
-    return b.savedAt - a.savedAt
-  })
-}
+type Filters = Pick<GalleryStore, "searchQuery" | "activeTags" | "sortOrder">
 
-async function querySites(
-  query: string,
-  activeTags: string[],
-  order: SortOrder
-): Promise<SavedSite[]> {
-  let results: SavedSite[]
-  if (query.trim()) {
-    results = await savedSiteStore.search(query.trim())
-  } else {
-    results = await savedSiteStore.getAll()
-  }
+async function querySites({ searchQuery, activeTags, sortOrder }: Filters): Promise<SavedSite[]> {
+  const query = searchQuery.trim()
+  let results = query ? await savedSiteStore.search(query) : await savedSiteStore.getAll()
   if (activeTags.length > 0) {
     results = results.filter((s) => s.tags.some((t) => activeTags.includes(t)))
   }
-  return sortSites(results, order)
+  return sortSites(results, sortOrder)
 }
 
-async function queryTags(): Promise<TagCount[]> {
+interface TagSummary {
+  tags: TagCount[]
+  /** Every saved site, ignoring filters. */
+  totalSites: number
+}
+
+/** Tag counts (most used first) plus the size of the whole library. */
+async function queryTagSummary(): Promise<TagSummary> {
   const all = await savedSiteStore.getAll()
   const counts = new Map<string, number>()
   for (const s of all) {
@@ -60,87 +55,72 @@ async function queryTags(): Promise<TagCount[]> {
       counts.set(tag, (counts.get(tag) ?? 0) + 1)
     }
   }
-  return Array.from(counts.entries())
+  const tags = Array.from(counts.entries())
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
+  return { tags, totalSites: all.length }
+}
+
+/** Sites for the given filters together with fresh tag counts. */
+async function querySitesAndTags(filters: Filters) {
+  const [sites, summary] = await Promise.all([querySites(filters), queryTagSummary()])
+  return { sites, ...summary }
 }
 
 export const useGalleryStore = create<GalleryStore>((set, get) => ({
   sites: [],
   tags: [],
+  totalSites: 0,
   searchQuery: "",
   activeTags: [],
-  sortOrder: "savedAt",
+  sortOrder: loadSortOrder(),
   isLoading: true,
 
   async load() {
     set({ isLoading: true })
-    const [sites, tags] = await Promise.all([
-      querySites(get().searchQuery, get().activeTags, get().sortOrder),
-      queryTags(),
-    ])
-    set({ sites, tags, isLoading: false })
+    set({ ...(await querySitesAndTags(get())), isLoading: false })
   },
 
-  async setSearchQuery(query) {
-    set({ searchQuery: query, isLoading: true })
-    const sites = await querySites(query, get().activeTags, get().sortOrder)
-    set({ sites, isLoading: false })
+  async setSearchQuery(searchQuery) {
+    set({ searchQuery, isLoading: true })
+    set({ sites: await querySites(get()), isLoading: false })
   },
 
-  async setActiveTags(tags) {
-    set({ activeTags: tags, isLoading: true })
-    const sites = await querySites(get().searchQuery, tags, get().sortOrder)
-    set({ sites, isLoading: false })
+  async setActiveTags(activeTags) {
+    set({ activeTags, isLoading: true })
+    set({ sites: await querySites(get()), isLoading: false })
   },
 
-  async setSortOrder(order) {
-    set({ sortOrder: order, isLoading: true })
-    const sites = await querySites(get().searchQuery, get().activeTags, order)
-    set({ sites, isLoading: false })
+  async setSortOrder(sortOrder) {
+    saveSortOrder(sortOrder)
+    set({ sortOrder, isLoading: true })
+    set({ sites: await querySites(get()), isLoading: false })
   },
 
-  async updateSiteTags(id, tags) {
-    await savedSiteStore.update(id, { tags })
-    const [sites, tagCounts] = await Promise.all([
-      querySites(get().searchQuery, get().activeTags, get().sortOrder),
-      queryTags(),
-    ])
-    set({ sites, tags: tagCounts })
+  async updateSiteTags(id, siteTags) {
+    await savedSiteStore.update(id, { tags: siteTags })
+    set(await querySitesAndTags(get()))
   },
 
   async togglePin(id, pinned) {
     await savedSiteStore.setPinned(id, pinned)
-    const sites = await querySites(get().searchQuery, get().activeTags, get().sortOrder)
-    set({ sites })
+    set({ sites: await querySites(get()) })
   },
 
   async deleteSite(id) {
     await savedSiteStore.delete(id)
-    const [sites, tags] = await Promise.all([
-      querySites(get().searchQuery, get().activeTags, get().sortOrder),
-      queryTags(),
-    ])
-    set({ sites, tags })
+    set(await querySitesAndTags(get()))
   },
 
   async renameTag(oldName, newName) {
     await savedSiteStore.renameTag(oldName, newName)
     const activeTags = get().activeTags.map((t) => (t === oldName ? newName : t))
-    const [sites, tags] = await Promise.all([
-      querySites(get().searchQuery, activeTags, get().sortOrder),
-      queryTags(),
-    ])
-    set({ sites, tags, activeTags })
+    set({ ...(await querySitesAndTags({ ...get(), activeTags })), activeTags })
   },
 
   async deleteTag(name) {
     await savedSiteStore.deleteTag(name)
     const activeTags = get().activeTags.filter((t) => t !== name)
-    const [sites, tags] = await Promise.all([
-      querySites(get().searchQuery, activeTags, get().sortOrder),
-      queryTags(),
-    ])
-    set({ sites, tags, activeTags })
+    set({ ...(await querySitesAndTags({ ...get(), activeTags })), activeTags })
   },
 }))

@@ -2,15 +2,52 @@ import "@/style.css"
 
 import {
   BookmarkIcon,
+  ChartNoAxesColumnIcon,
   ChevronDownIcon,
   ExternalLinkIcon,
   GridIcon,
   LayersIcon,
+  LayoutGridIcon,
   PaletteIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
+  PlusIcon,
   TagIcon,
+  Trash2Icon,
   TypeIcon,
 } from "lucide-react"
+import { useEffect, useState } from "react"
 
+import { BulkActionBar } from "@/components/gallery/BulkActionBar"
+import { DataMenu } from "@/components/gallery/DataMenu"
+import { Favicon } from "@/components/gallery/Favicon"
+import { GalleryEmptyState } from "@/components/gallery/GalleryEmptyState"
+import { GalleryGrid } from "@/components/gallery/GalleryGrid"
+import { GalleryHeader } from "@/components/gallery/GalleryHeader"
+import { GallerySkeleton } from "@/components/gallery/GallerySkeleton"
+import { HeaderButton } from "@/components/gallery/HeaderButton"
+import { NavRow } from "@/components/gallery/NavRow"
+import { OverviewPlaceholder } from "@/components/gallery/OverviewPlaceholder"
+import { PermissionBanner } from "@/components/gallery/PermissionBanner"
+import { PinnedTagChips } from "@/components/gallery/PinnedTagChips"
+import { SearchBox } from "@/components/gallery/SearchBox"
+import { SeedDbButton } from "@/components/gallery/SeedDbButton"
+import { SelectModeButton } from "@/components/gallery/SelectModeButton"
+import { SidebarFooter } from "@/components/gallery/SidebarFooter"
+import { SidebarIconButton } from "@/components/gallery/SidebarIconButton"
+import { SidebarInput } from "@/components/gallery/SidebarInput"
+import { SidebarNav } from "@/components/gallery/SidebarNav"
+import { SidebarRail } from "@/components/gallery/SidebarRail"
+import { SidebarShell } from "@/components/gallery/SidebarShell"
+import { SiteCard } from "@/components/gallery/SiteCard"
+import { SiteCardMenu } from "@/components/gallery/SiteCardMenu"
+import { SiteThumbnail } from "@/components/gallery/SiteThumbnail"
+import { SortMenu } from "@/components/gallery/SortMenu"
+import { TagChip } from "@/components/gallery/TagChip"
+import { TagList } from "@/components/gallery/TagList"
+import { TagMenu } from "@/components/gallery/TagMenu"
+import { ThemeToggle } from "@/components/gallery/ThemeToggle"
+import { PopupBody } from "@/components/popup/PopupBody"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -34,6 +71,8 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import type { SortOrder } from "@/lib/sort-sites"
+import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
 
 // ── Token display helpers ────────────────────────────────────────────────────
@@ -57,6 +96,26 @@ const colorTokens = [
   { token: "--ring", label: "Ring" },
   { token: "--sidebar", label: "Sidebar" },
   { token: "--sidebar-border", label: "Sidebar Border" },
+  { token: "--surface-section", label: "Surface Section" },
+  { token: "--surface-inner", label: "Surface Inner" },
+  { token: "--surface-tertiary", label: "Surface Tertiary" },
+  { token: "--surface-hover", label: "Surface Hover" },
+  { token: "--tag-bg", label: "Tag BG" },
+  { token: "--border-hover", label: "Border Hover" },
+  { token: "--separator", label: "Separator" },
+  { token: "--accent-soft", label: "Accent Soft" },
+  { token: "--accent-soft-foreground", label: "Accent Soft FG" },
+  { token: "--primary-gradient-from", label: "Gradient From" },
+  { token: "--primary-gradient-to", label: "Gradient To" },
+]
+
+const shadowTokens = [
+  { token: "--shadow-xs", label: "xs", className: "shadow-xs" },
+  { token: "--shadow-sm", label: "sm", className: "shadow-sm" },
+  { token: "--shadow-md", label: "md", className: "shadow-md" },
+  { token: "--shadow-lg", label: "lg", className: "shadow-lg" },
+  { token: "--shadow-pop", label: "pop", className: "shadow-pop" },
+  { token: "--shadow-primary", label: "primary", className: "shadow-primary" },
 ]
 
 const typeScale = [
@@ -70,11 +129,12 @@ const typeScale = [
 ]
 
 const radiusTokens = [
-  { token: "--radius-sm", label: "sm · 4px", className: "rounded-sm" },
-  { token: "--radius", label: "base · 8px", className: "rounded-lg" },
-  { token: "--radius-lg", label: "lg · 12px", className: "rounded-xl" },
-  { token: "--radius-xl", label: "xl · 16px", className: "rounded-[var(--radius-xl)]" },
-  { token: "--radius-card", label: "card · 12px", className: "rounded-card" },
+  { token: "--radius-sm", label: "sm · 0.6r", className: "rounded-sm" },
+  { token: "--radius", label: "base · r", className: "rounded-[var(--radius)]" },
+  { token: "--radius-lg", label: "lg · 1.35r", className: "rounded-lg" },
+  { token: "--radius-xl", label: "xl · 1.75r", className: "rounded-xl" },
+  { token: "--radius-card", label: "card · 1.5r", className: "rounded-card" },
+  { token: "--radius-inner", label: "inner · 1.5r − inset", className: "rounded-inner" },
 ]
 
 // ── Section shell ────────────────────────────────────────────────────────────
@@ -180,61 +240,283 @@ const DEMO_SITES = [
   },
 ]
 
-function SiteCardPreview({ title, domain, category, favicon, thumbColor }: (typeof DEMO_SITES)[0]) {
+/** Demo thumbnail: a gradient PNG blob, so the card exercises its real-thumbnail path. */
+function useDemoThumb(from: string, to: string): Blob | null {
+  const [blob, setBlob] = useState<Blob | null>(null)
+  useEffect(() => {
+    const canvas = document.createElement("canvas")
+    canvas.width = 640
+    canvas.height = 400
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    const gradient = ctx.createLinearGradient(0, 0, 640, 400)
+    gradient.addColorStop(0, from)
+    gradient.addColorStop(1, to)
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, 640, 400)
+    canvas.toBlob(setBlob, "image/png")
+  }, [from, to])
+  return blob
+}
+
+const CARD_DEMO_TAGS = ["Video", "Music", "Dev Tools", "Docs", "Design", "Uncategorized"]
+const NOW = Date.now()
+const DAY_MS = 86_400_000
+
+function makeDemoSite(patch: Partial<SavedSite>): SavedSite {
+  return {
+    id: 1,
+    url: "https://vercel.com",
+    title: "Vercel",
+    favicon: null,
+    thumb: null,
+    tags: ["Dev Tools"],
+    savedAt: NOW - 2 * DAY_MS,
+    openCount: 0,
+    pinned: false,
+    ...patch,
+  }
+}
+
+/** Real SiteCards with live tag / pin / delete state, covering each visual case. */
+function SiteCardDemo() {
+  const thumbA = useDemoThumb("#18181b", "#4f46e5")
+  const thumbB = useDemoThumb("#0f766e", "#a3e635")
+  const [sites, setSites] = useState<SavedSite[]>(() => [
+    makeDemoSite({ id: 1, title: "Vercel", url: "https://vercel.com" }),
+    makeDemoSite({
+      id: 2,
+      title: "Linear: plan and build products",
+      url: "https://linear.app",
+      tags: ["Dev Tools", "Docs", "Design"],
+      pinned: true,
+      savedAt: NOW - 9 * DAY_MS,
+    }),
+    makeDemoSite({
+      id: 3,
+      title: "Weather today",
+      url: "https://weather.example.org",
+      tags: ["Uncategorized"],
+      savedAt: NOW - 3_600_000,
+    }),
+    makeDemoSite({
+      id: 4,
+      title: "A very long page title that has to be cut off at the card edge",
+      url: "https://www.example.com/a/long/path",
+      tags: ["Video", "Music", "Design", "Docs"],
+      savedAt: NOW - 200 * DAY_MS,
+    }),
+  ])
+  const withThumbs = sites.map((site) => ({
+    ...site,
+    thumb: site.id === 1 ? thumbA : site.id === 2 ? thumbB : null,
+  }))
+
+  function patch(site: SavedSite, next: Partial<SavedSite>) {
+    setSites((all) => all.map((s) => (s.id === site.id ? { ...s, ...next } : s)))
+  }
+
   return (
-    <div className="group flex w-[var(--card-min-width)] flex-col overflow-hidden rounded-card border bg-card shadow-sm transition-all duration-150 hover:shadow-md hover:ring-1 hover:ring-[hsl(var(--card-hover-ring))]">
-      {/* Thumbnail area */}
-      <div className={cn("relative h-32 bg-gradient-to-br", thumbColor)}>
-        <div className="absolute inset-0 flex items-center justify-center opacity-10">
-          <GridIcon className="h-16 w-16 text-white" />
-        </div>
-        <div className="absolute bottom-2 left-2">
-          <Badge variant="secondary" className="text-[10px]">
-            {category}
-          </Badge>
-        </div>
-      </div>
-
-      {/* Card body */}
-      <div className="flex flex-col gap-1 p-3">
-        <div className="flex items-center gap-2">
-          <Avatar className="size-5 rounded-sm">
-            <AvatarFallback className="rounded-sm text-[10px]">{favicon}</AvatarFallback>
-          </Avatar>
-          <span className="truncate text-[var(--text-sm)] font-medium text-card-foreground">
-            {title}
-          </span>
-        </div>
-        <span className="font-mono text-[var(--text-xs)] text-muted-foreground">{domain}</span>
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between border-t px-3 py-2">
-        <span className="font-mono text-[var(--text-xs)] text-muted-foreground">0 visits</span>
-        <Button variant="ghost" size="icon" className="size-6 text-muted-foreground">
-          <ExternalLinkIcon className="size-3" />
-        </Button>
-      </div>
+    <div className="grid w-full grid-cols-1 gap-[var(--gallery-gap)] sm:grid-cols-2">
+      {withThumbs.map((site) => (
+        <SiteCard
+          key={site.id}
+          site={site}
+          availableTags={CARD_DEMO_TAGS}
+          onClick={() => {}}
+          onTagsChange={(s, tags) => patch(s, { tags })}
+          onPinToggle={(s, pinned) => patch(s, { pinned })}
+          onDelete={(s) => setSites((all) => all.filter((x) => x.id !== s.id))}
+        />
+      ))}
     </div>
   )
 }
 
-function SiteCardSkeleton() {
+// ── Gallery feature components (real components, demo props) ──────────────────
+
+const DEMO_TAGS = ["Video", "Music", "Dev Tools", "Docs", "Uncategorized"]
+
+const DEMO_GRID_SITES: SavedSite[] = DEMO_SITES.map((site, i) => ({
+  id: i + 1,
+  url: `https://${site.domain}`,
+  title: site.title,
+  favicon: null,
+  thumb: null,
+  tags: [DEMO_TAGS[i % DEMO_TAGS.length] ?? "Uncategorized"],
+  savedAt: NOW - (i + 1) * DAY_MS,
+  openCount: 0,
+  pinned: i === 0,
+}))
+
+function GalleryComponentsDemo() {
+  const [query, setQuery] = useState("")
+  const [active, setActive] = useState<string[]>([])
+  const [collapsed, setCollapsed] = useState(false)
+  const [selected, setSelected] = useState(2)
+  const [sort, setSort] = useState<SortOrder>("savedAt")
+  const [selectOn, setSelectOn] = useState(false)
+
   return (
-    <div className="flex w-[var(--card-min-width)] flex-col overflow-hidden rounded-card border bg-card shadow-sm">
-      <Skeleton className="h-32 w-full rounded-none" />
-      <div className="flex flex-col gap-2 p-3">
-        <div className="flex items-center gap-2">
-          <Skeleton className="size-5 rounded-sm" />
-          <Skeleton className="h-3.5 w-24" />
+    <>
+      <DemoBox label="GalleryHeader — SortMenu + PinnedTagChips (centre slot) + Select toggle">
+        <GalleryHeader
+          className="w-full"
+          start={<SortMenu value={sort} onChange={setSort} />}
+          center={
+            <PinnedTagChips
+              className="max-w-xl shrink-0"
+              pinnedTags={["Video", "Dev Tools"]}
+              activeTags={active}
+              onSelect={setActive}
+            />
+          }
+          end={<SelectModeButton selectMode={selectOn} onToggle={() => setSelectOn((v) => !v)} />}
+        />
+      </DemoBox>
+
+      <DemoBox label="HeaderButton (idle, pressed) — SidebarIconButton (sm, destructive, md, lg) — SidebarInput (md, sm)">
+        <HeaderButton>Idle</HeaderButton>
+        <HeaderButton pressed>Pressed</HeaderButton>
+        <SidebarIconButton aria-label="Add">
+          <PlusIcon />
+        </SidebarIconButton>
+        <SidebarIconButton tone="destructive" aria-label="Delete">
+          <Trash2Icon />
+        </SidebarIconButton>
+        <SidebarIconButton size="md" aria-label="Collapse">
+          <PanelLeftCloseIcon />
+        </SidebarIconButton>
+        <SidebarIconButton size="lg" aria-label="Expand">
+          <PanelLeftOpenIcon />
+        </SidebarIconButton>
+        <SidebarInput className="w-40" placeholder="Search sites" />
+        <SidebarInput size="sm" className="w-40" placeholder="New tag name…" />
+      </DemoBox>
+
+      <DemoBox label="SearchBox (sidebar search field)">
+        <SearchBox className="w-60" value={query} onChange={setQuery} />
+      </DemoBox>
+
+      <DemoBox label="NavRow — idle, active, with count, compact (icon-only rail)">
+        <div className="flex w-60 flex-col gap-0.5 rounded-card bg-surface-section p-1.5">
+          <NavRow active icon={<LayoutGridIcon />} label="Gallery" count={24} onClick={() => {}} />
+          <NavRow icon={<ChartNoAxesColumnIcon />} label="Overview" onClick={() => {}} />
         </div>
-        <Skeleton className="h-3 w-16" />
-      </div>
-      <div className="flex items-center justify-between border-t px-3 py-2">
-        <Skeleton className="h-3 w-12" />
-        <Skeleton className="size-6 rounded-md" />
-      </div>
-    </div>
+        <div className="flex w-12 flex-col gap-0.5 rounded-card bg-surface-section p-1.5">
+          <NavRow compact active icon={<LayoutGridIcon />} label="Gallery" onClick={() => {}} />
+          <NavRow compact icon={<ChartNoAxesColumnIcon />} label="Overview" onClick={() => {}} />
+        </div>
+      </DemoBox>
+
+      <DemoBox label="ThemeToggle (segmented light / dark)">
+        <ThemeToggle className="w-60" />
+      </DemoBox>
+
+      <DemoBox label="OverviewPlaceholder">
+        <OverviewPlaceholder className="w-full" />
+      </DemoBox>
+
+      <DemoBox label="BulkActionBar (select mode)">
+        <BulkActionBar
+          className="max-w-2xl shrink-0"
+          selectedCount={selected}
+          tagNames={DEMO_TAGS}
+          onAddTag={() => setSelected((n) => n + 1)}
+          onRemoveTag={() => setSelected((n) => Math.max(0, n - 1))}
+          onDelete={() => setSelected(0)}
+          onClear={() => setSelected(0)}
+        />
+      </DemoBox>
+
+      <DemoBox label="PermissionBanner">
+        <PermissionBanner className="w-full" onDismiss={() => {}} onGranted={() => {}} />
+      </DemoBox>
+
+      <DemoBox label="GalleryEmptyState — no results / no sites">
+        <GalleryEmptyState
+          className="w-72"
+          searchQuery="figma"
+          activeTags={[]}
+          onClearSearch={() => {}}
+        />
+        <GalleryEmptyState
+          className="w-72"
+          searchQuery=""
+          activeTags={[]}
+          onClearSearch={() => {}}
+        />
+      </DemoBox>
+
+      <DemoBox label="GalleryGrid — virtualized cards (scrolls inside a fixed height)">
+        <GalleryGrid
+          className="h-96 w-full"
+          sites={DEMO_GRID_SITES}
+          isLoading={false}
+          searchQuery=""
+          activeTags={active}
+          availableTags={DEMO_TAGS}
+          selectMode={false}
+          selectedIds={new Set()}
+          onOpenSite={() => {}}
+          onTagsChange={() => {}}
+          onPinToggle={() => {}}
+          onDeleteSite={() => {}}
+          onToggleSelect={() => {}}
+          onClearSearch={() => {}}
+        />
+      </DemoBox>
+
+      <DemoBox label="SeedDbButton (dev only — confirming inserts synthetic sites into the local DB)">
+        <SeedDbButton className="flex-none" onSeeded={async () => {}} />
+      </DemoBox>
+
+      <DemoBox label="GallerySkeleton">
+        <GallerySkeleton className="w-full" cols={3} />
+      </DemoBox>
+
+      <DemoBox
+        label="SidebarShell — search, SidebarNav, TagList, SidebarFooter (DataMenu + ThemeToggle)"
+        className="items-start"
+      >
+        <SidebarShell
+          className="h-[34rem]"
+          collapsed={collapsed}
+          onToggleCollapsed={() => setCollapsed((c) => !c)}
+          rail={
+            <SidebarRail
+              page="gallery"
+              totalSites={15}
+              onPageChange={() => {}}
+              onSearch={() => setCollapsed(false)}
+            />
+          }
+          footer={
+            <SidebarFooter status="Backup downloaded">
+              <DataMenu onExport={() => {}} onImportFile={() => {}} onCopyForAI={() => {}} />
+              <ThemeToggle />
+            </SidebarFooter>
+          }
+        >
+          <SearchBox value={query} onChange={setQuery} />
+          <SidebarNav className="px-0.5" page="gallery" totalSites={15} onPageChange={() => {}} />
+          <TagList
+            className="min-h-0 flex-1"
+            tags={DEMO_TAGS.map((name, i) => ({ name, count: i + 1 }))}
+            activeTags={active}
+            pinnedTags={["Video"]}
+            tagOrder={DEMO_TAGS}
+            totalCount={15}
+            onSelect={setActive}
+            onTogglePinTag={() => {}}
+            onRenameTag={async () => {}}
+            onDeleteTag={async () => {}}
+            onAddTag={async () => {}}
+            onReorderTags={() => {}}
+          />
+        </SidebarShell>
+      </DemoBox>
+    </>
   )
 }
 
@@ -244,6 +526,7 @@ const NAV_ITEMS = [
   { id: "colors", label: "Colors", icon: PaletteIcon },
   { id: "typography", label: "Typography", icon: TypeIcon },
   { id: "radius", label: "Radius", icon: LayersIcon },
+  { id: "elevation", label: "Elevation", icon: LayersIcon },
   { id: "buttons", label: "Buttons", icon: GridIcon },
   { id: "badges", label: "Badges", icon: BookmarkIcon },
   { id: "inputs", label: "Inputs", icon: TypeIcon },
@@ -251,7 +534,72 @@ const NAV_ITEMS = [
   { id: "feedback", label: "Feedback", icon: GridIcon },
   { id: "dropdown", label: "Dropdown Menu", icon: ChevronDownIcon },
   { id: "gallery-preview", label: "Gallery Preview", icon: GridIcon },
+  { id: "gallery-components", label: "Gallery Components", icon: LayersIcon },
+  { id: "popup-components", label: "Popup Components", icon: BookmarkIcon },
 ]
+
+// ── Popup components ──────────────────────────────────────────────────────────
+
+/** Fixed-width frame matching the toolbar popup (w-[300px], p-4). */
+function PopupFrame({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
+      <div className="w-[300px] rounded-lg border bg-background p-4">{children}</div>
+    </div>
+  )
+}
+
+type PopupDemoProps = Omit<
+  React.ComponentProps<typeof PopupBody>,
+  "onOpenGallery" | "onGrantPermission" | "onSave" | "className"
+>
+
+const POPUP_BASE: PopupDemoProps = {
+  saveState: "idle",
+  isSaved: false,
+  saveError: null,
+  permGranted: false,
+  permDeclined: false,
+  showPermPrompt: false,
+  alreadySavedOnOpen: false,
+}
+
+const POPUP_SCENARIOS: { label: string; props: Partial<PopupDemoProps> }[] = [
+  { label: "Idle", props: {} },
+  { label: "Saving…", props: { saveState: "saving", permGranted: true } },
+  {
+    label: "Saved! (full thumbnails)",
+    props: { saveState: "saved-full", isSaved: true, permGranted: true },
+  },
+  {
+    label: "Saved with page-icon hint",
+    props: { saveState: "saved-favicon", isSaved: true, showPermPrompt: true },
+  },
+  { label: "Error", props: { saveState: "error", saveError: "Can't save this page" } },
+  { label: "Permission prompt", props: { showPermPrompt: true } },
+  { label: "Declined: “Using page icons” note", props: { permDeclined: true } },
+]
+
+function PopupComponentsDemo() {
+  return (
+    <div className="flex flex-wrap items-start gap-6">
+      {POPUP_SCENARIOS.map(({ label, props }) => (
+        <PopupFrame key={label} label={label}>
+          <PopupBody
+            {...POPUP_BASE}
+            {...props}
+            onOpenGallery={() => {}}
+            onGrantPermission={() => {}}
+            onSave={() => {}}
+          />
+        </PopupFrame>
+      ))}
+    </div>
+  )
+}
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -350,6 +698,11 @@ export default function DesignSystem() {
                 </div>
               ))}
             </div>
+            <DemoBox label="Font family — sans (Inter, bundled locally)">
+              <span className="font-sans text-[var(--text-base)] text-foreground">
+                The quick brown fox jumps over the lazy dog 0123456789
+              </span>
+            </DemoBox>
             <DemoBox label="Font family — display (headings)">
               <span className="font-display text-xl font-semibold text-foreground">
                 URL Gallery — save the web you love
@@ -379,9 +732,45 @@ export default function DesignSystem() {
             </div>
           </Section>
 
+          {/* ── Foundation: Elevation ─────────────────────────────── */}
+          <Section id="elevation" label="Foundation" title="Elevation">
+            <div className="flex flex-wrap gap-6">
+              {shadowTokens.map(({ token, label, className: cls }) => (
+                <div key={token} className="flex flex-col items-center gap-2">
+                  <div
+                    className={cn(
+                      "size-16 rounded-card",
+                      token === "--shadow-primary"
+                        ? "bg-primary-gradient"
+                        : "border bg-surface-inner",
+                      cls
+                    )}
+                  />
+                  <div className="text-center">
+                    <p className="font-mono text-[var(--text-xs)] font-medium text-foreground">
+                      {label}
+                    </p>
+                    <p className="font-mono text-[var(--text-xs)] text-muted-foreground">{token}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <DemoBox label="Surfaces — section holds an inner tile">
+              <div className="rounded-card bg-surface-section p-3">
+                <div className="rounded-inner bg-surface-inner p-4 text-[var(--text-sm)] text-foreground">
+                  Inner surface on a section surface
+                </div>
+              </div>
+              <div className="rounded-card bg-surface-tertiary px-4 py-3 text-[var(--text-sm)] text-foreground">
+                Tertiary surface
+              </div>
+            </DemoBox>
+          </Section>
+
           {/* ── Components: Buttons ───────────────────────────────── */}
           <Section id="buttons" label="Components" title="Button">
             <DemoBox label="Variants">
+              <Button variant="gradient">Gradient</Button>
               <Button variant="default">Default</Button>
               <Button variant="secondary">Secondary</Button>
               <Button variant="outline">Outline</Button>
@@ -398,6 +787,10 @@ export default function DesignSystem() {
               </Button>
             </DemoBox>
             <DemoBox label="With icon">
+              <Button variant="gradient">
+                <BookmarkIcon />
+                Save site
+              </Button>
               <Button>
                 <BookmarkIcon />
                 Save site
@@ -408,6 +801,9 @@ export default function DesignSystem() {
               </Button>
             </DemoBox>
             <DemoBox label="States">
+              <Button variant="gradient" disabled>
+                Disabled gradient
+              </Button>
               <Button disabled>Disabled</Button>
               <Button variant="outline" disabled>
                 Disabled outline
@@ -422,15 +818,29 @@ export default function DesignSystem() {
               <Badge variant="secondary">Secondary</Badge>
               <Badge variant="outline">Outline</Badge>
               <Badge variant="destructive">Destructive</Badge>
+              <Badge variant="tag">Tag</Badge>
             </DemoBox>
-            <DemoBox label="Category tags (primary use-case)">
-              {["Tools", "Reading", "Dev", "Design", "Productivity", "Reference", "Video"].map(
-                (cat) => (
-                  <Badge key={cat} variant="secondary">
-                    {cat}
-                  </Badge>
-                )
-              )}
+            <DemoBox label="Neutral tag chips (one style, no hue)">
+              {[
+                "Tools",
+                "Reading",
+                "Dev",
+                "Design",
+                "Productivity",
+                "Reference",
+                "Uncategorized",
+              ].map((cat) => (
+                <Badge key={cat} variant="tag">
+                  {cat}
+                </Badge>
+              ))}
+            </DemoBox>
+            <DemoBox label="Neutral tag chips on a section surface" className="bg-surface-section">
+              {["Tools", "Reading", "Dev"].map((cat) => (
+                <Badge key={cat} variant="tag">
+                  {cat}
+                </Badge>
+              ))}
             </DemoBox>
           </Section>
 
@@ -577,25 +987,83 @@ export default function DesignSystem() {
           {/* ── Gallery Preview ───────────────────────────────────── */}
           <Section id="gallery-preview" label="Patterns" title="Gallery — Site Card Preview">
             <p className="text-[var(--text-sm)] text-muted-foreground">
-              The SiteCard as it will appear in the gallery grid. All values use token variables —
-              no hardcoded colors, sizes, or radius.
+              The real SiteCard and its parts, with live state. Everything reads from tokens.
             </p>
 
-            <DemoBox label="Populated cards">
-              <div className="flex flex-wrap gap-[var(--gallery-gap)]">
-                {DEMO_SITES.map((site) => (
-                  <SiteCardPreview key={site.domain} {...site} />
-                ))}
+            <DemoBox label="Cards: real thumbnail, pinned + 3 tags, Uncategorized, long title (hover, press, use the + and ... menus)">
+              <SiteCardDemo />
+            </DemoBox>
+
+            <DemoBox label="Select mode: unselected and selected">
+              <div className="grid w-full grid-cols-1 gap-[var(--gallery-gap)] sm:grid-cols-2">
+                <SiteCard
+                  site={DEMO_GRID_SITES[0] as SavedSite}
+                  availableTags={DEMO_TAGS}
+                  onClick={() => {}}
+                  selectMode
+                  selected={false}
+                />
+                <SiteCard
+                  site={DEMO_GRID_SITES[1] as SavedSite}
+                  availableTags={DEMO_TAGS}
+                  onClick={() => {}}
+                  selectMode
+                  selected
+                />
               </div>
             </DemoBox>
 
-            <DemoBox label="Skeleton loading state">
-              <div className="flex flex-wrap gap-[var(--gallery-gap)]">
-                <SiteCardSkeleton />
-                <SiteCardSkeleton />
-                <SiteCardSkeleton />
+            <DemoBox label="Parts: TagChip (with and without remove), TagMenu, SiteCardMenu, Favicon">
+              <TagChip name="Design" onRemove={() => {}} />
+              <TagChip name="Uncategorized" />
+              <TagMenu
+                label="Edit tags"
+                current={["Video"]}
+                available={CARD_DEMO_TAGS}
+                onToggle={() => {}}
+                onCreate={() => {}}
+              />
+              <SiteCardMenu
+                title="Demo"
+                pinned={false}
+                onPinToggle={() => {}}
+                onDelete={() => {}}
+              />
+              <Favicon site={{ url: "https://vercel.com", title: "Vercel", favicon: null }} />
+              <Favicon
+                site={{ url: "https://vercel.com", title: "Vercel", favicon: null }}
+                size="lg"
+              />
+            </DemoBox>
+
+            <DemoBox label="SiteThumbnail: letter fallback">
+              <SiteThumbnail
+                className="w-48 rounded-inner"
+                site={makeDemoSite({ title: "No favicon" })}
+              />
+            </DemoBox>
+
+            <DemoBox label="Card tokens (src/style.css): --card-inset, --lift, --press-scale, --duration-fast, --duration-base, --thumb-aspect, --shadow-outline">
+              <div className="rounded-inner bg-surface-inner p-3 shadow-outline text-[var(--text-xs)] text-muted-foreground">
+                shadow-outline
               </div>
             </DemoBox>
+          </Section>
+
+          {/* ── Gallery feature components ────────────────────────── */}
+          <Section id="gallery-components" label="Patterns" title="Gallery — Feature Components">
+            <p className="text-[var(--text-sm)] text-muted-foreground">
+              The real components the gallery page is composed from, rendered with demo props.
+            </p>
+            <GalleryComponentsDemo />
+          </Section>
+
+          {/* ── Popup components ──────────────────────────────────── */}
+          <Section id="popup-components" label="Patterns" title="Toolbar Popup — Components">
+            <p className="text-[var(--text-sm)] text-muted-foreground">
+              The real components the toolbar popup is composed from, in each state it can show.
+            </p>
+            <PopupComponentsDemo />
           </Section>
         </div>
       </main>

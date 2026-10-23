@@ -16,8 +16,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { cva } from "class-variance-authority"
 import { GripVerticalIcon, InfoIcon, PencilIcon, PinIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
+import { navRowVariants } from "@/components/gallery/NavRow"
+import { SidebarIconButton } from "@/components/gallery/SidebarIconButton"
+import { SidebarInput } from "@/components/gallery/SidebarInput"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +33,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 export interface TagCount {
@@ -50,6 +53,48 @@ interface CategoryFilterProps {
   onAddTag: (name: string) => Promise<void>
   onReorderTags: (order: string[]) => void
 }
+
+const sectionLabelClass =
+  "px-2.5 pb-1.5 pt-4 text-[length:var(--text-xs)] font-medium uppercase tracking-wider text-muted-foreground"
+
+const tagRowVariants = cva("group/row relative", {
+  variants: {
+    dragging: {
+      true: "z-10 opacity-70",
+      false: "",
+    },
+  },
+  defaultVariants: { dragging: false },
+})
+
+/** Edit and pin buttons overlaid on the right side of a tag row. */
+const rowActionVariants = cva(
+  "absolute top-1/2 -translate-y-1/2 transition-[opacity,color,background-color] duration-fast focus-visible:opacity-100",
+  {
+    variants: {
+      slot: {
+        edit: "right-8",
+        pin: "right-1.5",
+      },
+      /** `hover`: shown while the row is hovered. `pinned`: always shown, in full colour. */
+      reveal: {
+        hover: "opacity-0 group-hover/row:opacity-100",
+        pinned: "text-foreground opacity-100",
+      },
+    },
+    defaultVariants: { slot: "edit", reveal: "hover" },
+  }
+)
+
+const pinIconVariants = cva("", {
+  variants: {
+    pinned: {
+      true: "fill-current",
+      false: "",
+    },
+  },
+  defaultVariants: { pinned: false },
+})
 
 const PINNED_ZONE_ID = "pinned-zone"
 const TAGS_ZONE_ID = "tags-zone"
@@ -98,15 +143,12 @@ function TagRow({
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn("group relative flex items-center", isDragging && "z-10 opacity-70")}
-    >
+    <div ref={setNodeRef} style={style} className={tagRowVariants({ dragging: isDragging })}>
       {isEditing ? (
-        <div ref={editRowRef} className="flex min-w-0 flex-1 items-center gap-1 py-1">
-          <Input
+        <div ref={editRowRef} className="flex min-w-0 flex-1 items-center gap-1.5 py-0.5 pl-1">
+          <SidebarInput
             ref={editInputRef}
+            size="sm"
             value={editValue}
             onChange={(e) => onEditValueChange(e.target.value)}
             onKeyDown={(e) => {
@@ -120,17 +162,17 @@ function TagRow({
               onCommitEdit()
             }}
             disabled={busy}
-            className="h-6 min-w-0 flex-1 px-1.5 text-xs"
+            className="min-w-0 flex-1"
           />
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <button
-                type="button"
+              <SidebarIconButton
+                tone="destructive"
                 aria-label={`Delete ${tag.name}`}
-                className="shrink-0 text-muted-foreground hover:text-destructive"
+                className="shrink-0"
               >
-                <Trash2Icon size={12} />
-              </button>
+                <Trash2Icon />
+              </SidebarIconButton>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -156,57 +198,51 @@ function TagRow({
         <>
           <button
             type="button"
+            onClick={onToggle}
+            aria-current={isActive ? "true" : undefined}
+            className={cn(navRowVariants({ active: isActive }), "pr-9")}
+          >
+            <span className="min-w-0 flex-1 truncate">{tag.name}</span>
+            <span className="shrink-0 text-xs font-normal tabular-nums transition-opacity group-focus-within/row:opacity-0 group-hover/row:opacity-0">
+              {tag.count}
+            </span>
+          </button>
+
+          {/* Drag handle: sits in the row's left padding, shown on hover */}
+          <button
+            type="button"
             {...attributes}
             {...listeners}
             aria-label={`Reorder ${tag.name}`}
-            className="flex size-4 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity group-hover:opacity-40 hover:!opacity-100 active:cursor-grabbing"
+            className="absolute inset-y-1 left-0 flex w-3 cursor-grab items-center justify-center rounded-sm text-muted-foreground opacity-0 outline-none transition-opacity focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover/row:opacity-60 hover:!opacity-100 active:cursor-grabbing"
           >
-            <GripVerticalIcon size={11} />
+            <GripVerticalIcon className="size-2.5" />
           </button>
 
-          <button
-            type="button"
-            onClick={onToggle}
-            className={cn(
-              "flex min-w-0 flex-1 items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
-              isActive
-                ? "bg-accent font-medium text-accent-foreground"
-                : "text-sidebar-foreground hover:bg-accent/60"
-            )}
-          >
-            <span className="min-w-0 truncate pr-9">{tag.name}</span>
-          </button>
-
-          {/* Edit button */}
-          <button
-            type="button"
+          {/* Edit button (replaces the count while the row is hovered) */}
+          <SidebarIconButton
             onClick={(e) => {
               e.stopPropagation()
               onStartEdit()
             }}
             aria-label={`Edit ${tag.name}`}
-            className="absolute right-7 flex size-4 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100"
+            className={rowActionVariants({ slot: "edit", reveal: "hover" })}
           >
-            <PencilIcon size={10} />
-          </button>
+            <PencilIcon />
+          </SidebarIconButton>
 
-          {/* Pin button */}
-          <button
-            type="button"
+          {/* Pin toggle: always visible while pinned, otherwise on hover */}
+          <SidebarIconButton
             onClick={(e) => {
               e.stopPropagation()
               onTogglePin()
             }}
             aria-label={pinned ? `Unpin ${tag.name}` : `Pin ${tag.name}`}
-            className={cn(
-              "absolute right-1.5 flex size-4 items-center justify-center rounded transition-opacity",
-              pinned
-                ? "opacity-100 text-foreground"
-                : "opacity-0 group-hover:opacity-60 text-muted-foreground hover:!opacity-100"
-            )}
+            aria-pressed={pinned}
+            className={rowActionVariants({ slot: "pin", reveal: pinned ? "pinned" : "hover" })}
           >
-            <PinIcon size={10} className={cn(pinned && "fill-foreground")} />
-          </button>
+            <PinIcon className={pinIconVariants({ pinned })} />
+          </SidebarIconButton>
         </>
       )}
     </div>
@@ -216,7 +252,7 @@ function TagRow({
 function TagZone({ id, children }: { id: string; children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id })
   return (
-    <div ref={setNodeRef} className="flex flex-col gap-1">
+    <div ref={setNodeRef} className="flex flex-col gap-0.5">
       {children}
     </div>
   )
@@ -349,58 +385,9 @@ export function CategoryFilter({
   }
 
   return (
-    <nav className="flex flex-col gap-1 px-2 pb-4">
-      <div className="mb-1 flex items-center justify-between px-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Tags
-        </p>
-        <button
-          type="button"
-          onClick={startAdd}
-          aria-label="Add tag"
-          className="flex size-4 items-center justify-center rounded text-muted-foreground hover:text-foreground"
-        >
-          <PlusIcon size={11} />
-        </button>
-      </div>
-
-      {adding && (
-        <div className="mb-1 flex items-center gap-1 px-2">
-          <Input
-            ref={addInputRef}
-            value={addValue}
-            onChange={(e) => setAddValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commitAdd()
-              if (e.key === "Escape") setAdding(false)
-            }}
-            onBlur={commitAdd}
-            disabled={busy}
-            placeholder="New tag name…"
-            className="h-6 flex-1 px-1.5 text-xs"
-          />
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => onSelect([])}
-        className={cn(
-          "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
-          activeTags.length === 0
-            ? "bg-accent font-medium text-accent-foreground"
-            : "text-sidebar-foreground hover:bg-accent/60"
-        )}
-      >
-        <span>All</span>
-      </button>
-
+    <nav aria-label="Tags" className="flex flex-col gap-0.5 px-0.5 pb-2">
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        {pinnedTagRows.length > 0 && (
-          <p className="mb-1 mt-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Pinned
-          </p>
-        )}
+        {pinnedTagRows.length > 0 && <p className={sectionLabelClass}>Pinned</p>}
         <SortableContext
           items={pinnedTagRows.map((t) => t.name)}
           strategy={verticalListSortingStrategy}
@@ -428,11 +415,32 @@ export function CategoryFilter({
           </TagZone>
         </SortableContext>
 
-        {pinnedTagRows.length > 0 && unpinnedTagRows.length > 0 && (
-          <p className="mb-1 mt-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Tags
-          </p>
+        <div className="flex items-center justify-between pr-1">
+          <p className={sectionLabelClass}>Tags</p>
+          <SidebarIconButton onClick={startAdd} aria-label="Add tag" className="mt-3">
+            <PlusIcon />
+          </SidebarIconButton>
+        </div>
+
+        {adding && (
+          <div className="mb-1 flex items-center gap-1">
+            <SidebarInput
+              ref={addInputRef}
+              size="sm"
+              value={addValue}
+              onChange={(e) => setAddValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitAdd()
+                if (e.key === "Escape") setAdding(false)
+              }}
+              onBlur={commitAdd}
+              disabled={busy}
+              placeholder="New tag name…"
+              className="flex-1"
+            />
+          </div>
         )}
+
         <SortableContext
           items={unpinnedTagRows.map((t) => t.name)}
           strategy={verticalListSortingStrategy}
@@ -462,9 +470,9 @@ export function CategoryFilter({
       </DndContext>
 
       {showUncategorizedNotice && (
-        <div className="mt-3 flex items-start gap-1.5 rounded-md bg-muted/50 px-2 py-2">
-          <InfoIcon size={11} className="mt-0.5 shrink-0 text-muted-foreground/70" />
-          <p className="text-[10px] leading-snug text-muted-foreground">
+        <div className="mt-3 flex items-start gap-1.5 rounded-inner bg-surface-tertiary/50 px-2.5 py-2">
+          <InfoIcon className="mt-0.5 size-3 shrink-0 text-muted-foreground" />
+          <p className="text-[length:var(--text-xs)] leading-snug text-muted-foreground">
             {uncategorizedCount === totalCount
               ? "All sites are uncategorized — tags are auto-detected from OG tags and domain."
               : `${uncategorizedCount} site${uncategorizedCount !== 1 ? "s" : ""} couldn't be auto-tagged.`}

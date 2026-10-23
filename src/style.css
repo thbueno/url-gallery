@@ -1,4 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap");
+/* Fonts are bundled locally from npm (offline-safe, no Google Fonts request). */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
 
 @tailwind base;
 @tailwind components;
@@ -37,77 +39,79 @@
 
 @layer base {
   :root {
-    /* ── Color palette — theme (hsl) ─────────────────────────────────── */
+    /* ── Theme colors (hsl triplets) ── */
     --background: 0 0% 100%;
-    --foreground: 153.3333 17.6471% 10%;
-    --card: 120 6.6667% 97.0588%;
-    --card-foreground: 153.3333 17.6471% 10%;
+    --foreground: 330 0% 3.94%;
+    --card: 0 0% 96.86%;
+    --card-foreground: 330 0% 3.94%;
     --popover: 0 0% 100%;
-    --popover-foreground: 153.3333 17.6471% 10%;
-    --primary: 143.6735 61.5063% 53.1373%;
+    --popover-foreground: 330 0% 3.94%;
+    --primary: 221.3 97.47% 53.53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 153.3333 17.6471% 10%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 180 1.9608% 90%;
-    --muted-foreground: 153.3333 17.6471% 10%;
-    --accent: 152.3077 35.1351% 92.7451%;
-    --accent-foreground: 143.6735 61.5063% 53.1373%;
-    --destructive: 296.3265 63.0901% 54.3137%;
+    --secondary: 0 0% 92.16%;
+    --secondary-foreground: 330 0% 3.94%;
+    --muted: 0 0% 96.86%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 96.86%;
+    --accent-foreground: 330 0% 3.94%;
+    --destructive: 357.21 100% 45.32%;
     --destructive-foreground: 0 0% 100%;
-    --border: 144.0 21.7391% 90.9804%;
-    --input: 140 23.0769% 97.4510%;
-    --ring: 142.953 62.3431% 53.1373%;
+    --border: 0 0% 92.16%;
+    --input: 0 0% 92.16%;
+    --ring: 216.23 100% 58.43%;
 
-    /* ── Gallery surface tokens ───────────────────────────────────── */
-    --sidebar: 120 6.6667% 97.0588%;
-    --sidebar-foreground: 153.3333 17.6471% 10%;
-    --sidebar-primary: 143.6735 61.5063% 53.1373%;
+    /* ── Surfaces and accents (Board Blue extensions) ── */
+    --surface-section: 0 0% 96.86%;
+    --surface-inner: 0 0% 100%;
+    --surface-tertiary: 0 0% 92.16%;
+    --surface-hover: 0 0% 96.86%;
+    --border-hover: 60 0% 83.14%;
+    --separator: 0 0% 92.16%;
+    --tag-bg: 0 0% 98.43%;
+    --accent-soft: 214.28 96.22% 92.78%;
+    --accent-soft-foreground: 225.35 84.1% 48.98%;
+
+    /* ── Primary gradient stops ── */
+    --primary-gradient-from: 216.23 100% 58.43%;
+    --primary-gradient-to: 221.3 97.47% 53.53%;
+    --primary-gradient-hover-from: 212.06 100% 60%;
+    --primary-gradient-hover-to: 216.23 100% 58.43%;
+
+    /* ── Gallery surface tokens ── */
+    --sidebar: 0 0% 96.86%;
+    --sidebar-foreground: 330 0% 3.94%;
+    --sidebar-primary: 221.3 97.47% 53.53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 152.3077 35.1351% 92.7451%;
-    --sidebar-accent-foreground: 143.6735 61.5063% 53.1373%;
-    --sidebar-border: 142.5 16.6667% 90.5882%;
-    --sidebar-ring: 142.953 62.3431% 53.1373%;
-    /* Thumbnail overlay gradient (bottom-up scrim for card readability) */
-    --thumb-scrim: linear-gradient(to top, hsl(153.3333 17.6471% 10% / 0.7) 0%, transparent 60%);
-    /* Card hover elevation ring */
-    --card-hover-ring: 144 21.7391% 80%;
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: 330 0% 3.94%;
+    --sidebar-border: 0 0% 92.16%;
+    --sidebar-ring: 216.23 100% 58.43%;
+    --thumb-scrim: linear-gradient(to top, hsl(330 0% 3.94% / 0.7) 0%, transparent 60%);
 
-    /* ── Chart colors ─────────────────────────────────────────────── */
-    --chart-1: 143.6735 61.5063% 53.1373%;
-    --chart-2: 99.8438 69.5652% 36.0784%;
-    --chart-3: 342.2069 65.0224% 56.2745%;
-    --chart-4: 86.9492 55.1402% 41.9608%;
-    --chart-5: 281.3636 52.8000% 50.9804%;
+    /* ── Chart colors ── */
+    --chart-1: 173.4 100% 41.76%;
+    --chart-2: 79.91 100% 45.08%;
+    --chart-3: 327.47 95.38% 68.88%;
+    --chart-4: 195.82 100% 50%;
+    --chart-5: 272.27 100% 73.99%;
 
-    /* ── Shadow system ────────────────────────────────────────────── */
-    --shadow-x: 0px;
-    --shadow-y: 2px;
-    --shadow-blur: 0px;
-    --shadow-spread: 0px;
-    --shadow-opacity: 0;
-    --shadow-color: #3dd276;
-    --shadow-2xs: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0);
-    --shadow-xs: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0);
-    --shadow-sm: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0), 0px 1px 2px -1px
-      hsl(142.953 62.3431% 53.1373% / 0);
-    --shadow: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0), 0px 1px 2px -1px
-      hsl(142.953 62.3431% 53.1373% / 0);
-    --shadow-md: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0), 0px 2px 4px -1px
-      hsl(142.953 62.3431% 53.1373% / 0);
-    --shadow-lg: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0), 0px 4px 6px -1px
-      hsl(142.953 62.3431% 53.1373% / 0);
-    --shadow-xl: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0), 0px 8px 10px -1px
-      hsl(142.953 62.3431% 53.1373% / 0);
-    --shadow-2xl: 0px 2px 0px 0px hsl(142.953 62.3431% 53.1373% / 0);
+    /* ── Elevation ── */
+    --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px
+      hsl(var(--primary-gradient-from)), 0 1px 2px 0 rgb(0 0 0 / 0.1);
+    --shadow-2xs: 0 1px rgb(0 0 0 / 0.05);
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.06), 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 4px 6px -2px rgb(0 0 0 / 0.05), 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-pop: 0 1px 0 0 rgb(0 0 0 / 0.0196), 0 1px 12px 0 rgb(0 0 0 / 0.0588), 0 0 1px 0
+      rgb(0 0 0 / 0.3216);
 
     /* ── Font family ──────────────────────────────────────────────── */
-    /* Prioritise Apple/Windows premium system faces before generic fallbacks */
-    --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text",
-      "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-    --font-display: "DM Sans", -apple-system, BlinkMacSystemFont, "SF Pro Display",
-      "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
-    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-      "Courier New", monospace;
+    --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+      "Segoe UI Emoji", "Noto Color Emoji";
+    --font-display: var(--font-sans);
+    --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+      Consolas, "Liberation Mono", monospace;
 
     /* ── Font size scale ──────────────────────────────────────────── */
     --text-xs: 0.6875rem; /* 11px */
@@ -117,17 +121,35 @@
     --text-xl: 1.25rem; /* 20px */
     --text-2xl: 1.5rem; /* 24px */
     --text-3xl: 1.875rem; /* 30px */
+    /* Button primitive label size (14px). Kept separate from --text-sm so buttons stay 14px. */
+    --text-button: 0.875rem; /* 14px */
 
     /* ── Letter spacing ───────────────────────────────────────────── */
     --tracking-normal: 0em;
     --spacing: 0.25rem;
 
-    /* ── Border radius ────────────────────────────────────────────── */
-    --radius: 1.3rem;
-    --radius-sm: 0.25rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.25rem;
-    --radius-card: 1rem; /* site card corner radius */
+    /* ── Border radius — "Soft" (ADR 0010) ────────────────────────── */
+    /* One base value; every other step derives from it. */
+    --radius: 0.875rem; /* 14px */
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-lg: calc(var(--radius) * 1.35);
+    --radius-xl: calc(var(--radius) * 1.75);
+    --radius-card: calc(var(--radius) * 1.5); /* site card corner radius */
+    /* Gap between a card edge and the thumbnail inside it */
+    --card-inset: 0.375rem; /* 6px */
+    /* Thumbnail corner radius: concentric with the card (card radius minus the inset) */
+    --radius-inner: max(0px, calc(var(--radius) * 1.5 - var(--card-inset)));
+
+    /* ── Motion (card hover and press, ADR 0010) ──────────────────── */
+    --duration-fast: 150ms;
+    --duration-base: 200ms;
+    --press-scale: 0.98;
+    --lift: 2px; /* how far a hovered card's thumbnail rises */
+
+    /* ── Thumbnail ────────────────────────────────────────────────── */
+    --thumb-aspect: 16 / 10;
+    /* 1px inner edge so a thumbnail never bleeds into the card surface */
+    --shadow-outline: inset 0 0 0 1px hsl(var(--foreground) / 0.07);
 
     /* ── Layout ───────────────────────────────────────────────────── */
     --sidebar-width: 15rem;
@@ -137,42 +159,72 @@
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --background: 0 0% 0%;
-      --foreground: 140 6.6667% 91.1765%;
-      --card: 180 6.6667% 5.8824%;
-      --card-foreground: 0 0% 85.0980%;
-      --popover: 0 0% 0%;
-      --popover-foreground: 140 6.6667% 91.1765%;
-      --primary: 143.9264 71.1790% 44.9020%;
+      /* ── Theme colors (hsl triplets) ── */
+      --background: 0 0% 7.06%;
+      --foreground: 180 0% 98.03%;
+      --card: 0 0% 9.05%;
+      --card-foreground: 180 0% 98.03%;
+      --popover: 0 0% 14.94%;
+      --popover-foreground: 180 0% 98.03%;
+      --primary: 221.3 97.47% 53.53%;
       --primary-foreground: 0 0% 100%;
-      --secondary: 120 7.6923% 94.9020%;
-      --secondary-foreground: 153.3333 17.6471% 10%;
-      --muted: 0 0% 9.4118%;
-      --muted-foreground: 150.0 2.5424% 46.2745%;
-      --accent: 146.4 49.0196% 10%;
-      --accent-foreground: 143.9264 71.1790% 44.9020%;
-      --destructive: 296.3265 63.0901% 54.3137%;
+      --secondary: 0 0% 14.94%;
+      --secondary-foreground: 180 0% 98.03%;
+      --muted: 0 0% 14.94%;
+      --muted-foreground: 0 0% 58%;
+      --accent: 240 0% 21%;
+      --accent-foreground: 180 0% 98.03%;
+      --destructive: 357.21 100% 45.32%;
       --destructive-foreground: 0 0% 100%;
-      --border: 120 2.2222% 8.8235%;
-      --input: 147.6923 18.3099% 13.9216%;
-      --ring: 142.953 62.3431% 53.1373%;
+      --border: 240 0% 25.05%;
+      --input: 240 0% 25.05%;
+      --ring: 216.23 100% 58.43%;
 
-      --sidebar: 180 5.8824% 10%;
-      --sidebar-foreground: 0 0% 85.0980%;
-      --sidebar-primary: 142.953 62.3431% 53.1373%;
+      /* ── Surfaces and accents (Board Blue extensions) ── */
+      --surface-section: 0 0% 9.05%;
+      --surface-inner: 0 0% 12.58%;
+      --surface-tertiary: 0 0% 14.94%;
+      --surface-hover: 240 0% 21%;
+      --border-hover: 0 0% 45.15%;
+      --separator: 0 0% 14.94%;
+      --tag-bg: 0 0% 13.55%;
+      --accent-soft: 226.51 58.74% 21.15%;
+      --accent-soft-foreground: 210.69 100% 77.83%;
+
+      /* ── Primary gradient stops ── */
+      --primary-gradient-from: 216.23 100% 58.43%;
+      --primary-gradient-to: 221.3 97.47% 53.53%;
+      --primary-gradient-hover-from: 212.06 100% 60%;
+      --primary-gradient-hover-to: 216.23 100% 58.43%;
+
+      /* ── Gallery surface tokens ── */
+      --sidebar: 0 0% 9.05%;
+      --sidebar-foreground: 180 0% 98.03%;
+      --sidebar-primary: 221.3 97.47% 53.53%;
       --sidebar-primary-foreground: 0 0% 100%;
-      --sidebar-accent: 146.4 49.0196% 10%;
-      --sidebar-accent-foreground: 143.9189 61.1570% 52.5490%;
-      --sidebar-border: 144.0 11.2782% 26.0784%;
-      --sidebar-ring: 142.953 62.3431% 53.1373%;
+      --sidebar-accent: 0 0% 12.58%;
+      --sidebar-accent-foreground: 180 0% 98.03%;
+      --sidebar-border: 240 0% 25.05%;
+      --sidebar-ring: 216.23 100% 58.43%;
       --thumb-scrim: linear-gradient(to top, hsl(0 0% 0% / 0.85) 0%, transparent 55%);
-      --card-hover-ring: 144 11.2782% 40%;
 
-      --chart-1: 143.6735 61.5063% 53.1373%;
-      --chart-2: 99.8438 69.5652% 36.0784%;
-      --chart-3: 342.2069 65.0224% 56.2745%;
-      --chart-4: 86.9492 55.1402% 41.9608%;
-      --chart-5: 281.3636 52.8000% 50.9804%;
+      /* ── Chart colors ── */
+      --chart-1: 173.4 100% 41.76%;
+      --chart-2: 79.91 100% 45.08%;
+      --chart-3: 327.47 95.38% 68.88%;
+      --chart-4: 195.82 100% 50%;
+      --chart-5: 272.27 100% 73.99%;
+
+      /* ── Elevation ── */
+      --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px
+        hsl(var(--primary-gradient-from)), 0 1px 2px 0 rgb(0 0 0 / 0.1);
+      --shadow-2xs: 0 1px rgb(0 0 0 / 0.16);
+      --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.18);
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.12), 0 1px 3px 0 rgb(0 0 0 / 0.16);
+      --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.12), 0 4px 6px -1px rgb(0 0 0 / 0.18);
+      --shadow-lg: 0 4px 6px -2px rgb(0 0 0 / 0.1), 0 10px 15px -3px rgb(0 0 0 / 0.18);
+      --shadow-pop: 0 1px 0 0 rgb(0 0 0 / 0.1), 0 1px 12px 0 rgb(0 0 0 / 0.16), 0 0 1px 0
+        rgb(0 0 0 / 0.42);
     }
   }
 
@@ -182,81 +234,141 @@
      always more specific than a bare `:root`, regardless of source order.
      Class is set on <html> by src/store/themeStore.ts. */
   html.dark {
-    --background: 0 0% 0%;
-    --foreground: 140 6.6667% 91.1765%;
-    --card: 180 6.6667% 5.8824%;
-    --card-foreground: 0 0% 85.0980%;
-    --popover: 0 0% 0%;
-    --popover-foreground: 140 6.6667% 91.1765%;
-    --primary: 143.9264 71.1790% 44.9020%;
+    /* ── Theme colors (hsl triplets) ── */
+    --background: 0 0% 7.06%;
+    --foreground: 180 0% 98.03%;
+    --card: 0 0% 9.05%;
+    --card-foreground: 180 0% 98.03%;
+    --popover: 0 0% 14.94%;
+    --popover-foreground: 180 0% 98.03%;
+    --primary: 221.3 97.47% 53.53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 120 7.6923% 94.9020%;
-    --secondary-foreground: 153.3333 17.6471% 10%;
-    --muted: 0 0% 9.4118%;
-    --muted-foreground: 150.0 2.5424% 46.2745%;
-    --accent: 146.4 49.0196% 10%;
-    --accent-foreground: 143.9264 71.1790% 44.9020%;
-    --destructive: 296.3265 63.0901% 54.3137%;
+    --secondary: 0 0% 14.94%;
+    --secondary-foreground: 180 0% 98.03%;
+    --muted: 0 0% 14.94%;
+    --muted-foreground: 0 0% 58%;
+    --accent: 240 0% 21%;
+    --accent-foreground: 180 0% 98.03%;
+    --destructive: 357.21 100% 45.32%;
     --destructive-foreground: 0 0% 100%;
-    --border: 120 2.2222% 8.8235%;
-    --input: 147.6923 18.3099% 13.9216%;
-    --ring: 142.953 62.3431% 53.1373%;
+    --border: 240 0% 25.05%;
+    --input: 240 0% 25.05%;
+    --ring: 216.23 100% 58.43%;
 
-    --sidebar: 180 5.8824% 10%;
-    --sidebar-foreground: 0 0% 85.0980%;
-    --sidebar-primary: 142.953 62.3431% 53.1373%;
+    /* ── Surfaces and accents (Board Blue extensions) ── */
+    --surface-section: 0 0% 9.05%;
+    --surface-inner: 0 0% 12.58%;
+    --surface-tertiary: 0 0% 14.94%;
+    --surface-hover: 240 0% 21%;
+    --border-hover: 0 0% 45.15%;
+    --separator: 0 0% 14.94%;
+    --tag-bg: 0 0% 13.55%;
+    --accent-soft: 226.51 58.74% 21.15%;
+    --accent-soft-foreground: 210.69 100% 77.83%;
+
+    /* ── Primary gradient stops ── */
+    --primary-gradient-from: 216.23 100% 58.43%;
+    --primary-gradient-to: 221.3 97.47% 53.53%;
+    --primary-gradient-hover-from: 212.06 100% 60%;
+    --primary-gradient-hover-to: 216.23 100% 58.43%;
+
+    /* ── Gallery surface tokens ── */
+    --sidebar: 0 0% 9.05%;
+    --sidebar-foreground: 180 0% 98.03%;
+    --sidebar-primary: 221.3 97.47% 53.53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 146.4 49.0196% 10%;
-    --sidebar-accent-foreground: 143.9189 61.1570% 52.5490%;
-    --sidebar-border: 144.0 11.2782% 26.0784%;
-    --sidebar-ring: 142.953 62.3431% 53.1373%;
+    --sidebar-accent: 0 0% 12.58%;
+    --sidebar-accent-foreground: 180 0% 98.03%;
+    --sidebar-border: 240 0% 25.05%;
+    --sidebar-ring: 216.23 100% 58.43%;
     --thumb-scrim: linear-gradient(to top, hsl(0 0% 0% / 0.85) 0%, transparent 55%);
-    --card-hover-ring: 144 11.2782% 40%;
 
-    --chart-1: 143.6735 61.5063% 53.1373%;
-    --chart-2: 99.8438 69.5652% 36.0784%;
-    --chart-3: 342.2069 65.0224% 56.2745%;
-    --chart-4: 86.9492 55.1402% 41.9608%;
-    --chart-5: 281.3636 52.8000% 50.9804%;
+    /* ── Chart colors ── */
+    --chart-1: 173.4 100% 41.76%;
+    --chart-2: 79.91 100% 45.08%;
+    --chart-3: 327.47 95.38% 68.88%;
+    --chart-4: 195.82 100% 50%;
+    --chart-5: 272.27 100% 73.99%;
+
+    /* ── Elevation ── */
+    --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px
+      hsl(var(--primary-gradient-from)), 0 1px 2px 0 rgb(0 0 0 / 0.1);
+    --shadow-2xs: 0 1px rgb(0 0 0 / 0.16);
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.18);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.12), 0 1px 3px 0 rgb(0 0 0 / 0.16);
+    --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.12), 0 4px 6px -1px rgb(0 0 0 / 0.18);
+    --shadow-lg: 0 4px 6px -2px rgb(0 0 0 / 0.1), 0 10px 15px -3px rgb(0 0 0 / 0.18);
+    --shadow-pop: 0 1px 0 0 rgb(0 0 0 / 0.1), 0 1px 12px 0 rgb(0 0 0 / 0.16), 0 0 1px 0
+      rgb(0 0 0 / 0.42);
   }
 
   html.light {
+    /* ── Theme colors (hsl triplets) ── */
     --background: 0 0% 100%;
-    --foreground: 153.3333 17.6471% 10%;
-    --card: 120 6.6667% 97.0588%;
-    --card-foreground: 153.3333 17.6471% 10%;
+    --foreground: 330 0% 3.94%;
+    --card: 0 0% 96.86%;
+    --card-foreground: 330 0% 3.94%;
     --popover: 0 0% 100%;
-    --popover-foreground: 153.3333 17.6471% 10%;
-    --primary: 143.6735 61.5063% 53.1373%;
+    --popover-foreground: 330 0% 3.94%;
+    --primary: 221.3 97.47% 53.53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 153.3333 17.6471% 10%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 180 1.9608% 90%;
-    --muted-foreground: 153.3333 17.6471% 10%;
-    --accent: 152.3077 35.1351% 92.7451%;
-    --accent-foreground: 143.6735 61.5063% 53.1373%;
-    --destructive: 296.3265 63.0901% 54.3137%;
+    --secondary: 0 0% 92.16%;
+    --secondary-foreground: 330 0% 3.94%;
+    --muted: 0 0% 96.86%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 96.86%;
+    --accent-foreground: 330 0% 3.94%;
+    --destructive: 357.21 100% 45.32%;
     --destructive-foreground: 0 0% 100%;
-    --border: 144.0 21.7391% 90.9804%;
-    --input: 140 23.0769% 97.4510%;
-    --ring: 142.953 62.3431% 53.1373%;
+    --border: 0 0% 92.16%;
+    --input: 0 0% 92.16%;
+    --ring: 216.23 100% 58.43%;
 
-    --sidebar: 120 6.6667% 97.0588%;
-    --sidebar-foreground: 153.3333 17.6471% 10%;
-    --sidebar-primary: 143.6735 61.5063% 53.1373%;
+    /* ── Surfaces and accents (Board Blue extensions) ── */
+    --surface-section: 0 0% 96.86%;
+    --surface-inner: 0 0% 100%;
+    --surface-tertiary: 0 0% 92.16%;
+    --surface-hover: 0 0% 96.86%;
+    --border-hover: 60 0% 83.14%;
+    --separator: 0 0% 92.16%;
+    --tag-bg: 0 0% 98.43%;
+    --accent-soft: 214.28 96.22% 92.78%;
+    --accent-soft-foreground: 225.35 84.1% 48.98%;
+
+    /* ── Primary gradient stops ── */
+    --primary-gradient-from: 216.23 100% 58.43%;
+    --primary-gradient-to: 221.3 97.47% 53.53%;
+    --primary-gradient-hover-from: 212.06 100% 60%;
+    --primary-gradient-hover-to: 216.23 100% 58.43%;
+
+    /* ── Gallery surface tokens ── */
+    --sidebar: 0 0% 96.86%;
+    --sidebar-foreground: 330 0% 3.94%;
+    --sidebar-primary: 221.3 97.47% 53.53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 152.3077 35.1351% 92.7451%;
-    --sidebar-accent-foreground: 143.6735 61.5063% 53.1373%;
-    --sidebar-border: 142.5 16.6667% 90.5882%;
-    --sidebar-ring: 142.953 62.3431% 53.1373%;
-    --thumb-scrim: linear-gradient(to top, hsl(153.3333 17.6471% 10% / 0.7) 0%, transparent 60%);
-    --card-hover-ring: 144 21.7391% 80%;
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: 330 0% 3.94%;
+    --sidebar-border: 0 0% 92.16%;
+    --sidebar-ring: 216.23 100% 58.43%;
+    --thumb-scrim: linear-gradient(to top, hsl(330 0% 3.94% / 0.7) 0%, transparent 60%);
 
-    --chart-1: 143.6735 61.5063% 53.1373%;
-    --chart-2: 99.8438 69.5652% 36.0784%;
-    --chart-3: 342.2069 65.0224% 56.2745%;
-    --chart-4: 86.9492 55.1402% 41.9608%;
-    --chart-5: 281.3636 52.8000% 50.9804%;
+    /* ── Chart colors ── */
+    --chart-1: 173.4 100% 41.76%;
+    --chart-2: 79.91 100% 45.08%;
+    --chart-3: 327.47 95.38% 68.88%;
+    --chart-4: 195.82 100% 50%;
+    --chart-5: 272.27 100% 73.99%;
+
+    /* ── Elevation ── */
+    --shadow-primary: inset 0 1px 0 0 rgb(255 255 255 / 0.25), 0 0 0 1px
+      hsl(var(--primary-gradient-from)), 0 1px 2px 0 rgb(0 0 0 / 0.1);
+    --shadow-2xs: 0 1px rgb(0 0 0 / 0.05);
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.06), 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.06), 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 4px 6px -2px rgb(0 0 0 / 0.05), 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-pop: 0 1px 0 0 rgb(0 0 0 / 0.0196), 0 1px 12px 0 rgb(0 0 0 / 0.0588), 0 0 1px 0
+      rgb(0 0 0 / 0.3216);
   }
 
   * {

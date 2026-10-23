@@ -9,3 +9,5 @@ New York style chosen over Default: denser spacing, sharper borders, more native
 Zinc base color chosen over Slate or Stone: neutral grey palette with no hue bias, so it recedes behind the gallery's thumbnail images rather than fighting them. Slate has a blue tint; Stone has a warm tint — both introduce color tension against arbitrary thumbnail content.
 
 Component path: `src/components/ui/`. Radius: `0.5rem`.
+
+**Update (ADR 0010):** the Zinc base color and the `0.5rem` radius are superseded by ADR 0010 (neutral greys with one blue accent, `0.875rem` base radius with a derived scale). The New York style choice still holds.
