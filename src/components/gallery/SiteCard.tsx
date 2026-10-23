@@ -56,7 +56,7 @@ interface SiteCardProps {
   className?: string
   selectMode?: boolean
   selected?: boolean
-  onToggleSelect?: (site: SavedSite) => void
+  onToggleSelect?: (site: SavedSite, shiftKey: boolean) => void
 }
 
 /**
@@ -83,9 +83,9 @@ export function SiteCard({
   const editTags = selectMode ? undefined : onTagsChange
   const hasMenu = !selectMode && !!(onPinToggle || onDelete)
 
-  function handleCardClick() {
+  function handleCardClick(e: React.MouseEvent) {
     if (selectMode) {
-      onToggleSelect?.(site)
+      onToggleSelect?.(site, e.shiftKey)
     } else {
       onClick(site)
     }
