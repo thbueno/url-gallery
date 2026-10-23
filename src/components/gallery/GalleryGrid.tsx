@@ -93,6 +93,12 @@ export function GalleryGrid({
     hasMounted.current = true
   }, [])
 
+  // Row heights change with the column count; drop the cached sizes so rows don't overlap after a resize.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-measure only when the column count changes
+  useEffect(() => {
+    rowVirtualizer.measure()
+  }, [cols])
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: activeTags change triggers animation version bump
   useEffect(() => {
     if (isFirstActiveTags.current) {
