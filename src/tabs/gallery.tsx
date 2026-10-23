@@ -10,7 +10,6 @@ import { BulkActionBar } from "@/components/gallery/BulkActionBar"
 import { DataMenu } from "@/components/gallery/DataMenu"
 import { GalleryGrid } from "@/components/gallery/GalleryGrid"
 import { GalleryHeader } from "@/components/gallery/GalleryHeader"
-import { OverviewPlaceholder } from "@/components/gallery/OverviewPlaceholder"
 import { PermissionBanner } from "@/components/gallery/PermissionBanner"
 import { PinnedTagChips } from "@/components/gallery/PinnedTagChips"
 import { SearchBox } from "@/components/gallery/SearchBox"
@@ -23,10 +22,12 @@ import { SidebarShell } from "@/components/gallery/SidebarShell"
 import { SortMenu } from "@/components/gallery/SortMenu"
 import { TagList } from "@/components/gallery/TagList"
 import { ThemeToggle } from "@/components/gallery/ThemeToggle"
+import { OverviewPage } from "@/components/overview/OverviewPage"
 import { useBackupActions } from "@/hooks/useBackupActions"
 import { useBulkSelection } from "@/hooks/useBulkSelection"
 import { useGalleryPage } from "@/hooks/useGalleryPage"
 import { useGalleryTags } from "@/hooks/useGalleryTags"
+import { useOverview } from "@/hooks/useOverview"
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed"
 import { useSiteActions } from "@/hooks/useSiteActions"
 import { useSiteSavedRefresh } from "@/hooks/useSiteSavedRefresh"
@@ -57,6 +58,7 @@ export default function GalleryPage() {
 
   const tagList = useGalleryTags()
   const siteActions = useSiteActions()
+  const overview = useOverview()
   const selection = useBulkSelection()
   const backup = useBackupActions({
     load,
@@ -131,7 +133,12 @@ export default function GalleryPage() {
 
       <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {page === "overview" ? (
-          <OverviewPlaceholder className="m-1" />
+          <OverviewPage
+            className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-2"
+            stats={overview.stats}
+            onOpenSite={(site) => siteActions.openSite(site).then(overview.reload)}
+            onSeeAll={(tag) => selectTags([tag])}
+          />
         ) : (
           <>
             <GalleryHeader
