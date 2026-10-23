@@ -282,6 +282,74 @@ describe("SavedSiteStore", () => {
   })
 
   // -------------------------------------------------------------------------
+  // bulkRestore — backup restore keeps the original field values
+  // -------------------------------------------------------------------------
+  it("bulkRestore() keeps the caller's savedAt, openCount, pinned and thumb", async () => {
+    const thumb = new Blob(["thumb-bytes"], { type: "image/webp" })
+
+    const added = await savedSiteStore.bulkRestore([
+      {
+        url: "https://restored.com",
+        title: "Restored",
+        favicon: "https://restored.com/favicon.ico",
+        thumb,
+        tags: ["A", "B"],
+        savedAt: 1_700_000_123_456,
+        openCount: 7,
+        pinned: true,
+      },
+    ])
+
+    expect(added.length).toBe(1)
+    const stored = await savedSiteStore.getByUrl("https://restored.com")
+    expect(stored?.id).toBeTypeOf("number")
+    expect(stored?.savedAt).toBe(1_700_000_123_456)
+    expect(stored?.openCount).toBe(7)
+    expect(stored?.pinned).toBe(true)
+    expect(stored?.tags).toEqual(["A", "B"])
+    expect(await (stored?.thumb as Blob).text()).toBe("thumb-bytes")
+  })
+
+  it("bulkRestore() skips a url that already exists and leaves the existing site untouched", async () => {
+    await savedSiteStore.add({
+      url: "https://dupe.com",
+      title: "Existing",
+      favicon: null,
+      thumb: null,
+      tags: ["Kept"],
+    })
+
+    const added = await savedSiteStore.bulkRestore([
+      {
+        url: "https://dupe.com",
+        title: "Backup Dupe",
+        favicon: null,
+        thumb: null,
+        tags: ["New"],
+        savedAt: 5,
+        openCount: 9,
+        pinned: true,
+      },
+      {
+        url: "https://fresh.com",
+        title: "Fresh",
+        favicon: null,
+        thumb: null,
+        tags: ["New"],
+        savedAt: 6,
+        openCount: 1,
+        pinned: false,
+      },
+    ])
+
+    expect(added.map((s) => s.url)).toEqual(["https://fresh.com"])
+    const existing = await savedSiteStore.getByUrl("https://dupe.com")
+    expect(existing?.title).toBe("Existing")
+    expect(existing?.openCount).toBe(0)
+    expect(existing?.pinned).toBe(false)
+  })
+
+  // -------------------------------------------------------------------------
   // Blob round-trip for thumb
   // -------------------------------------------------------------------------
   it("thumb Blob round-trips through add → getById intact", async () => {

@@ -8,20 +8,14 @@ describe("toAIDigest", () => {
       {
         url: "https://old.com",
         title: "Old",
-        favicon: null,
         tags: ["A"],
         savedAt: 1,
-        openCount: 0,
-        pinned: false,
       },
       {
         url: "https://new.com",
         title: "New",
-        favicon: null,
         tags: ["B", "C"],
         savedAt: 2,
-        openCount: 0,
-        pinned: false,
       },
     ])
     const lines = digest.split("\n")
@@ -36,6 +30,7 @@ const sampleSites = [
     url: "https://example.com",
     title: "Example",
     favicon: "https://example.com/favicon.ico",
+    thumb: "data:image/webp;base64,UklGRg==",
     tags: ["Dev Tools"],
     savedAt: 1_700_000_000_000,
     openCount: 3,
@@ -45,6 +40,7 @@ const sampleSites = [
     url: "https://news.example.org/post",
     title: "A Post",
     favicon: null,
+    thumb: null,
     tags: ["News", "Reading"],
     savedAt: 1_700_000_500_000,
     openCount: 0,
@@ -68,8 +64,47 @@ describe("parseBackup", () => {
     expect(() => parseBackup(text)).toThrow()
   })
 
-  it("round-trips sites through exportBackup → parseBackup unchanged", () => {
-    const restored = parseBackup(exportBackup(sampleSites))
-    expect(restored).toEqual(sampleSites)
+  it("still parses a v1 file, giving each site thumb null and no tag settings", () => {
+    const v1Text = `{
+  "format": "url-gallery-backup",
+  "version": 1,
+  "exportedAt": 1700000000000,
+  "sites": [
+    {
+      "url": "https://example.com",
+      "title": "Example",
+      "favicon": "https://example.com/favicon.ico",
+      "tags": ["Dev Tools"],
+      "savedAt": 1700000000000,
+      "openCount": 3,
+      "pinned": true
+    }
+  ]
+}`
+    expect(parseBackup(v1Text)).toEqual({
+      sites: [
+        {
+          url: "https://example.com",
+          title: "Example",
+          favicon: "https://example.com/favicon.ico",
+          thumb: null,
+          tags: ["Dev Tools"],
+          savedAt: 1_700_000_000_000,
+          openCount: 3,
+          pinned: true,
+        },
+      ],
+      tagSettings: null,
+    })
+  })
+
+  it("round-trips sites, thumbnails and tag settings through exportBackup → parseBackup", () => {
+    const tagSettings = {
+      pinnedTags: ["Dev Tools"],
+      customTags: ["Reading"],
+      tagOrder: ["Reading", "Dev Tools", "News"],
+    }
+    const restored = parseBackup(exportBackup(sampleSites, tagSettings))
+    expect(restored).toEqual({ sites: sampleSites, tagSettings })
   })
 })
