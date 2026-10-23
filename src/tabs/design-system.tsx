@@ -27,7 +27,6 @@ import { GalleryHeader } from "@/components/gallery/GalleryHeader"
 import { GallerySkeleton } from "@/components/gallery/GallerySkeleton"
 import { HeaderButton } from "@/components/gallery/HeaderButton"
 import { NavRow } from "@/components/gallery/NavRow"
-import { OverviewPlaceholder } from "@/components/gallery/OverviewPlaceholder"
 import { PermissionBanner } from "@/components/gallery/PermissionBanner"
 import { PinnedStrip } from "@/components/gallery/PinnedStrip"
 import { PinnedTagNav } from "@/components/gallery/PinnedTagNav"
@@ -48,6 +47,10 @@ import { TagChip } from "@/components/gallery/TagChip"
 import { TagList } from "@/components/gallery/TagList"
 import { TagMenu } from "@/components/gallery/TagMenu"
 import { ThemeToggle } from "@/components/gallery/ThemeToggle"
+import { OverviewEmptyState } from "@/components/overview/OverviewEmptyState"
+import { OverviewPage } from "@/components/overview/OverviewPage"
+import { OverviewSkeleton } from "@/components/overview/OverviewSkeleton"
+import { StatTile } from "@/components/overview/StatTile"
 import { PopupBody } from "@/components/popup/PopupBody"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -72,6 +75,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { computeOverview } from "@/lib/overview-stats"
 import type { SortOrder } from "@/lib/sort-sites"
 import type { SavedSite } from "@/lib/store"
 import { cn } from "@/lib/utils"
@@ -415,10 +419,6 @@ function GalleryComponentsDemo() {
         <ThemeToggle className="w-60" />
       </DemoBox>
 
-      <DemoBox label="OverviewPlaceholder">
-        <OverviewPlaceholder className="w-full" />
-      </DemoBox>
-
       <DemoBox label="BulkActionBar (floating; parent positions it. Narrow the window below 1000px for icon-only)">
         <BulkActionBar
           className="max-w-full shrink-0"
@@ -541,8 +541,43 @@ const NAV_ITEMS = [
   { id: "dropdown", label: "Dropdown Menu", icon: ChevronDownIcon },
   { id: "gallery-preview", label: "Gallery Preview", icon: GridIcon },
   { id: "gallery-components", label: "Gallery Components", icon: LayersIcon },
+  { id: "overview-components", label: "Overview", icon: GridIcon },
   { id: "popup-components", label: "Popup Components", icon: BookmarkIcon },
 ]
+
+// ── Overview components ───────────────────────────────────────────────────────
+
+const OVERVIEW_DEMO_SITES = DEMO_SITES.map((d, i) => ({
+  id: i + 1,
+  url: `https://${d.domain}`,
+  title: d.title,
+  favicon: null,
+  thumb: null,
+  tags: [d.category, ...(i % 2 ? ["Docs"] : [])],
+  savedAt: NOW - i * DAY_MS,
+  openCount: (DEMO_SITES.length - i) * 3,
+  pinned: false,
+}))
+
+function OverviewDemo() {
+  const stats = computeOverview(OVERVIEW_DEMO_SITES, NOW)
+  return (
+    <div className="space-y-6">
+      <DemoBox label="StatTile">
+        <StatTile className="w-60" icon={<TagIcon />} label="Tags" value={12} caption="a caption" />
+      </DemoBox>
+      <DemoBox label="OverviewPage (loaded)">
+        <OverviewPage className="w-full" stats={stats} onOpenSite={() => {}} onSeeAll={() => {}} />
+      </DemoBox>
+      <DemoBox label="OverviewSkeleton">
+        <OverviewSkeleton className="w-full" />
+      </DemoBox>
+      <DemoBox label="OverviewEmptyState">
+        <OverviewEmptyState className="w-full" />
+      </DemoBox>
+    </div>
+  )
+}
 
 // ── Popup components ──────────────────────────────────────────────────────────
 
@@ -1073,6 +1108,14 @@ export default function DesignSystem() {
               The real components the gallery page is composed from, rendered with demo props.
             </p>
             <GalleryComponentsDemo />
+          </Section>
+
+          {/* ── Overview components ───────────────────────────────── */}
+          <Section id="overview-components" label="Patterns" title="Overview Page — Components">
+            <p className="text-[var(--text-sm)] text-muted-foreground">
+              The Overview page with demo data, plus its loading and empty states.
+            </p>
+            <OverviewDemo />
           </Section>
 
           {/* ── Popup components ──────────────────────────────────── */}
