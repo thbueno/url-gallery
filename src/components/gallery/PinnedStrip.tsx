@@ -11,7 +11,7 @@ interface PinnedStripProps {
   onTagsChange?: (site: SavedSite, tags: string[]) => void
   onPinToggle?: (site: SavedSite, pinned: boolean) => void
   onDeleteSite?: (site: SavedSite) => void
-  onToggleSelect?: (site: SavedSite) => void
+  onToggleSelect?: (site: SavedSite, shiftKey: boolean) => void
   className?: string
 }
 
