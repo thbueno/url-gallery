@@ -1,4 +1,10 @@
-import { type BackupSite, exportBackup, parseBackup, toAIDigest } from "@/lib/backup"
+import {
+  type BackupSite,
+  type TagSettings,
+  exportBackup,
+  parseBackup,
+  toAIDigest,
+} from "@/lib/backup"
 import { ALL_TAGS } from "@/lib/categorizer"
 import { savedSiteStore } from "@/lib/store"
 import type { SavedSite } from "@/lib/store"
@@ -38,11 +44,32 @@ export async function seedDatabase(): Promise<void> {
 
 // ── Backup / AI-context ───────────────────────────────────────────────────────
 
-function toBackupSite(site: SavedSite): BackupSite {
+const BASE64_CHUNK = 0x8000
+
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  let binary = ""
+  for (let i = 0; i < bytes.length; i += BASE64_CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + BASE64_CHUNK))
+  }
+  return `data:${blob.type};base64,${btoa(binary)}`
+}
+
+function dataUrlToBlob(dataUrl: string): Blob {
+  const match = /^data:([^;,]*);base64,(.*)$/s.exec(dataUrl)
+  if (!match) throw new Error("Backup thumbnail is not a base64 data URL")
+  const binary = atob(match[2] ?? "")
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return new Blob([bytes], { type: match[1] ?? "" })
+}
+
+async function toBackupSite(site: SavedSite): Promise<BackupSite> {
   return {
     url: site.url,
     title: site.title,
     favicon: site.favicon,
+    thumb: site.thumb ? await blobToDataUrl(site.thumb) : null,
     tags: site.tags,
     savedAt: site.savedAt,
     openCount: site.openCount,
@@ -59,19 +86,65 @@ function downloadText(filename: string, text: string, mime: string): void {
   URL.revokeObjectURL(url)
 }
 
-export async function exportGallery(): Promise<void> {
+const TAG_SETTING_KEYS = ["pinnedTags", "customTags", "tagOrder"]
+
+async function readTagSettings(): Promise<TagSettings> {
+  const stored = await chrome.storage.local.get(TAG_SETTING_KEYS)
+  return {
+    pinnedTags: (stored.pinnedTags as string[] | undefined) ?? [],
+    customTags: (stored.customTags as string[] | undefined) ?? [],
+    tagOrder: (stored.tagOrder as string[] | undefined) ?? [],
+  }
+}
+
+/** Existing entries first, then incoming ones not already present. */
+function union(existing: string[], incoming: string[]): string[] {
+  return [...new Set([...existing, ...incoming])]
+}
+
+/** Serializes every saved site (thumbnails included) and the tag settings to v2 backup JSON. */
+export async function buildBackup(): Promise<string> {
   const sites = await savedSiteStore.getAll()
-  const today = new Date().toISOString().slice(0, 10)
-  downloadText(
-    `url-gallery-backup-${today}.json`,
-    exportBackup(sites.map(toBackupSite)),
-    "application/json"
+  return exportBackup(await Promise.all(sites.map(toBackupSite)), await readTagSettings())
+}
+
+/**
+ * Restores a backup file's text: adds sites whose URL isn't already saved (keeping their
+ * savedAt, openCount, pinned and thumbnail) and returns the sites that were added.
+ */
+export async function restoreBackup(text: string): Promise<SavedSite[]> {
+  const { sites, tagSettings } = parseBackup(text)
+  const added = await savedSiteStore.bulkRestore(
+    sites.map((s) => ({
+      url: s.url,
+      title: s.title,
+      favicon: s.favicon,
+      thumb: s.thumb === null ? null : dataUrlToBlob(s.thumb),
+      tags: s.tags,
+      savedAt: s.savedAt,
+      openCount: s.openCount,
+      pinned: s.pinned,
+    }))
   )
+  if (tagSettings) {
+    const existing = await readTagSettings()
+    await chrome.storage.local.set({
+      pinnedTags: union(existing.pinnedTags, tagSettings.pinnedTags),
+      customTags: union(existing.customTags, tagSettings.customTags),
+      tagOrder: union(existing.tagOrder, tagSettings.tagOrder),
+    })
+  }
+  return added
+}
+
+export async function exportGallery(): Promise<void> {
+  const today = new Date().toISOString().slice(0, 10)
+  downloadText(`url-gallery-backup-${today}.json`, await buildBackup(), "application/json")
 }
 
 export async function copyGalleryForAI(): Promise<void> {
   const sites = await savedSiteStore.getAll()
-  await navigator.clipboard.writeText(toAIDigest(sites.map(toBackupSite)))
+  await navigator.clipboard.writeText(toAIDigest(sites))
 }
 
 // Asks the service worker for a real thumbnail of each site, one at a time so
@@ -96,7 +169,7 @@ export async function backfillThumbnails(sites: SavedSite[] | null): Promise<voi
 }
 
 // Imports a backup file, merges new URLs, then asks the service worker to
-// backfill a real thumbnail for each new site by re-reading the page's og:image
+// backfill a real thumbnail for each new site without one by re-reading the page's og:image
 // — one at a time, so the import doesn't fire dozens of parallel page fetches.
 // The backfill isn't awaited: each finished thumbnail broadcasts SITE_SAVED and
 // the grid reloads, so thumbnails fill in progressively while the import status
@@ -110,27 +183,21 @@ export async function backfillThumbnails(sites: SavedSite[] | null): Promise<voi
 export async function importGallery(
   file: File
 ): Promise<{ added: number; thumbnailsSkipped: boolean }> {
-  const parsed = parseBackup(await file.text())
-  const added = await savedSiteStore.bulkAddNew(
-    parsed.map((s) => ({
-      url: s.url,
-      title: s.title,
-      favicon: s.favicon,
-      thumb: null,
-      tags: s.tags,
-    }))
-  )
+  const added = await restoreBackup(await file.text())
 
   const hasThumbnailPermission = await chrome.permissions.contains({
     origins: ["https://*/*"],
   })
 
+  // Restored thumbnails are kept; only sites without one need a real thumbnail fetched.
+  const needThumbnail = added.filter((s) => s.thumb === null)
+
   if (hasThumbnailPermission) {
-    void backfillThumbnails(added)
+    void backfillThumbnails(needThumbnail)
   }
 
   return {
     added: added.length,
-    thumbnailsSkipped: !hasThumbnailPermission && added.length > 0,
+    thumbnailsSkipped: !hasThumbnailPermission && needThumbnail.length > 0,
   }
 }

@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 import { copyGalleryForAI, exportGallery, importGallery } from "@/lib/gallery-io"
+import { useTagSettingsStore } from "@/store/tagSettingsStore"
 
 interface UseBackupActionsOptions {
   /** Reload the gallery after an import. */
@@ -31,6 +32,12 @@ export function useBackupActions({ load, onThumbnailsSkipped }: UseBackupActions
   async function importFile(file: File) {
     try {
       const { added, thumbnailsSkipped } = await importGallery(file)
+      // The import may have merged tag settings in chrome.storage.local.
+      // A failure here must not be reported as a bad backup file; the sites are already saved.
+      await useTagSettingsStore
+        .getState()
+        .hydrate()
+        .catch(() => {})
       await load()
       if (added === 0) {
         flashStatus("Nothing new to import")

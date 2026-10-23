@@ -41,6 +41,11 @@ class SavedSiteDatabase extends Dexie {
 
 const db = new SavedSiteDatabase()
 
+async function withoutExistingUrls<T extends { url: string }>(sites: T[]): Promise<T[]> {
+  const existing = new Set((await db.savedSites.toArray()).map((s) => s.url))
+  return sites.filter((s) => !existing.has(s.url))
+}
+
 class SavedSiteStore {
   async add(site: Omit<SavedSite, "id" | "savedAt" | "openCount" | "pinned">): Promise<SavedSite> {
     const record: Omit<SavedSite, "id"> = {
@@ -75,12 +80,22 @@ class SavedSiteStore {
   async bulkAddNew(
     sites: Omit<SavedSite, "id" | "savedAt" | "openCount" | "pinned">[]
   ): Promise<SavedSite[]> {
-    const existing = new Set((await db.savedSites.toArray()).map((s) => s.url))
-    const fresh = sites.filter((s) => !existing.has(s.url))
+    const fresh = await withoutExistingUrls(sites)
     if (fresh.length === 0) {
       return []
     }
     return this.bulkAdd(fresh)
+  }
+
+  /** Like bulkAddNew, but keeps the caller's savedAt, openCount, pinned and thumb (backup restore). */
+  async bulkRestore(sites: Omit<SavedSite, "id">[]): Promise<SavedSite[]> {
+    const fresh = await withoutExistingUrls(sites)
+    if (fresh.length === 0) {
+      return []
+    }
+    const ids = await db.savedSites.bulkAdd(fresh as SavedSite[], { allKeys: true })
+    const results = await db.savedSites.bulkGet(ids)
+    return results.filter((r): r is SavedSite => r !== undefined)
   }
 
   async bulkUpdate(patches: { id: number; patch: Partial<SavedSite> }[]): Promise<void> {
