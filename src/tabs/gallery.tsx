@@ -12,7 +12,7 @@ import { GalleryGrid } from "@/components/gallery/GalleryGrid"
 import { GalleryHeader } from "@/components/gallery/GalleryHeader"
 import { OverviewPlaceholder } from "@/components/gallery/OverviewPlaceholder"
 import { PermissionBanner } from "@/components/gallery/PermissionBanner"
-import { PinnedTagChips } from "@/components/gallery/PinnedTagChips"
+import { PinnedTagNav } from "@/components/gallery/PinnedTagNav"
 import { SearchBox } from "@/components/gallery/SearchBox"
 import { SeedDbButton } from "@/components/gallery/SeedDbButton"
 import { SelectModeButton } from "@/components/gallery/SelectModeButton"
@@ -149,8 +149,8 @@ export default function GalleryPage() {
                     onClear={selection.clearSelection}
                   />
                 ) : (
-                  <PinnedTagChips
-                    className="max-w-xl shrink-0"
+                  <PinnedTagNav
+                    className="max-w-xl"
                     pinnedTags={pinnedTags}
                     activeTags={activeTags}
                     onSelect={setActiveTags}
