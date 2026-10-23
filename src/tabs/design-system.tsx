@@ -29,6 +29,7 @@ import { HeaderButton } from "@/components/gallery/HeaderButton"
 import { NavRow } from "@/components/gallery/NavRow"
 import { OverviewPlaceholder } from "@/components/gallery/OverviewPlaceholder"
 import { PermissionBanner } from "@/components/gallery/PermissionBanner"
+import { PinnedStrip } from "@/components/gallery/PinnedStrip"
 import { PinnedTagChips } from "@/components/gallery/PinnedTagChips"
 import { SearchBox } from "@/components/gallery/SearchBox"
 import { SeedDbButton } from "@/components/gallery/SeedDbButton"
@@ -1011,6 +1012,17 @@ export default function DesignSystem() {
                   selected
                 />
               </div>
+            </DemoBox>
+
+            <DemoBox label="PinnedStrip: 4 large cards (SiteCard size=large), 2 columns below 1100px and 4 above">
+              <PinnedStrip
+                className="w-full"
+                sites={DEMO_GRID_SITES.slice(0, 4).map((s) => ({ ...s, pinned: true }))}
+                availableTags={DEMO_TAGS}
+                onOpenSite={() => {}}
+                onTagsChange={() => {}}
+                onPinToggle={() => {}}
+              />
             </DemoBox>
 
             <DemoBox label="Parts: TagChip (with and without remove), TagMenu, SiteCardMenu, Favicon">

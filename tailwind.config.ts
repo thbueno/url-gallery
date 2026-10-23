@@ -122,6 +122,8 @@ const config: Config = {
       screens: {
         wide: "1200px",
         narrow: { max: "899px" },
+        // Pinned strip goes from 2 to 4 columns (issue #68).
+        strip: "1100px",
       },
     },
   },
