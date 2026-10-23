@@ -30,6 +30,8 @@ import { useGalleryTags } from "@/hooks/useGalleryTags"
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed"
 import { useSiteActions } from "@/hooks/useSiteActions"
 import { useSiteSavedRefresh } from "@/hooks/useSiteSavedRefresh"
+import { allPinned, tagCountsFor } from "@/lib/bulk-selection"
+import { UNCATEGORIZED } from "@/lib/categorizer"
 import { backfillThumbnails } from "@/lib/gallery-io"
 import { useGalleryStore } from "@/store/galleryStore"
 import { useTagSettingsStore } from "@/store/tagSettingsStore"
@@ -129,7 +131,7 @@ export default function GalleryPage() {
         />
       </SidebarShell>
 
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {page === "overview" ? (
           <OverviewPlaceholder className="m-1" />
         ) : (
@@ -138,24 +140,12 @@ export default function GalleryPage() {
               className="px-6 pb-3 pt-2"
               start={<SortMenu value={sortOrder} onChange={setSortOrder} />}
               center={
-                selection.selectMode ? (
-                  <BulkActionBar
-                    className="my-0.5 max-w-2xl shrink-0"
-                    selectedCount={selection.selectedIds.size}
-                    tagNames={tagList.mergedTags.map((t) => t.name)}
-                    onAddTag={selection.addTagToSelected}
-                    onRemoveTag={selection.removeTagFromSelected}
-                    onDelete={selection.deleteSelected}
-                    onClear={selection.clearSelection}
-                  />
-                ) : (
-                  <PinnedTagNav
-                    className="max-w-xl"
-                    pinnedTags={pinnedTags}
-                    activeTags={activeTags}
-                    onSelect={setActiveTags}
-                  />
-                )
+                <PinnedTagNav
+                  className="max-w-xl"
+                  pinnedTags={pinnedTags}
+                  activeTags={activeTags}
+                  onSelect={setActiveTags}
+                />
               }
               end={
                 <SelectModeButton
@@ -188,6 +178,22 @@ export default function GalleryPage() {
               onToggleSelect={selection.toggleSelect}
               onClearSearch={() => setSearchQuery("")}
             />
+
+            {selection.selectMode ? (
+              <BulkActionBar
+                className="absolute bottom-6 left-1/2 z-20 max-w-[calc(100%-3rem)] -translate-x-1/2"
+                selectedCount={selection.selectedIds.size}
+                tagNames={tagList.mergedTags.map((t) => t.name)}
+                selectionTags={tagCountsFor(selection.selectedSites(), UNCATEGORIZED)}
+                allPinned={allPinned(selection.selectedSites())}
+                onAddTag={selection.addTagToSelected}
+                onRemoveTag={selection.removeTagFromSelected}
+                onTogglePin={selection.togglePinSelected}
+                onDelete={selection.deleteSelected}
+                onSelectAll={selection.selectAll}
+                onCancel={selection.exitSelectMode}
+              />
+            ) : null}
           </>
         )}
       </main>

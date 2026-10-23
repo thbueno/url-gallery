@@ -354,6 +354,7 @@ function GalleryComponentsDemo() {
   const [active, setActive] = useState<string[]>([])
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(2)
+  const [barPinned, setBarPinned] = useState(false)
   const [sort, setSort] = useState<SortOrder>("savedAt")
   const [selectOn, setSelectOn] = useState(false)
 
@@ -417,15 +418,19 @@ function GalleryComponentsDemo() {
         <OverviewPlaceholder className="w-full" />
       </DemoBox>
 
-      <DemoBox label="BulkActionBar (select mode)">
+      <DemoBox label="BulkActionBar (floating; parent positions it. Narrow the window below 1000px for icon-only)">
         <BulkActionBar
-          className="max-w-2xl shrink-0"
+          className="max-w-full shrink-0"
           selectedCount={selected}
           tagNames={DEMO_TAGS}
+          selectionTags={DEMO_TAGS.slice(0, 3).map((name, i) => ({ name, count: 3 - i }))}
+          allPinned={barPinned}
           onAddTag={() => setSelected((n) => n + 1)}
           onRemoveTag={() => setSelected((n) => Math.max(0, n - 1))}
+          onTogglePin={() => setBarPinned((v) => !v)}
           onDelete={() => setSelected(0)}
-          onClear={() => setSelected(0)}
+          onSelectAll={() => setSelected(24)}
+          onCancel={() => setSelected(0)}
         />
       </DemoBox>
 
