@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 
+import { focusExistingTab } from "@/lib/focus-tab"
 import { getDomain } from "@/lib/format"
 import { GENERIC_OG_DOMAINS } from "@/lib/thumbnail-service"
 import { withTimeout } from "@/lib/utils"
@@ -56,8 +57,12 @@ export function usePopupSave() {
     })
   }, [])
 
-  function handleOpenGallery() {
-    chrome.tabs.create({ url: chrome.runtime.getURL("/gallery.html") })
+  async function handleOpenGallery() {
+    const galleryUrl = chrome.runtime.getURL("/gallery.html")
+    // Trailing * so a query string on an open gallery tab still matches (hashes never do).
+    if (!(await focusExistingTab(`${galleryUrl}*`))) {
+      await chrome.tabs.create({ url: galleryUrl })
+    }
   }
 
   async function handleGrantPermission() {

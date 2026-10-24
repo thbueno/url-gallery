@@ -1,3 +1,4 @@
+import { focusExistingTab } from "@/lib/focus-tab"
 import { savedSiteStore } from "@/lib/store"
 import type { SavedSite } from "@/lib/store"
 import { useGalleryStore } from "@/store/galleryStore"
@@ -12,13 +13,7 @@ export function useSiteActions() {
     if (site.id !== undefined) {
       await savedSiteStore.incrementOpenCount(site.id)
     }
-    const [existing] = await chrome.tabs.query({ url: site.url })
-    if (existing?.id !== undefined) {
-      await chrome.tabs.update(existing.id, { active: true })
-      if (existing.windowId !== undefined) {
-        await chrome.windows.update(existing.windowId, { focused: true })
-      }
-    } else {
+    if (!(await focusExistingTab(site.url))) {
       window.open(site.url, "_blank")
     }
   }

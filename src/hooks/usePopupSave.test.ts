@@ -20,9 +20,10 @@ const TAB = {
 const chromeMock = {
   permissions: { contains: vi.fn(), request: vi.fn() },
   storage: { local: { get: vi.fn(), set: vi.fn() } },
-  tabs: { query: vi.fn(), create: vi.fn(), captureVisibleTab: vi.fn() },
+  tabs: { query: vi.fn(), create: vi.fn(), update: vi.fn(), captureVisibleTab: vi.fn() },
+  windows: { update: vi.fn() },
   scripting: { executeScript: vi.fn() },
-  runtime: { sendMessage: vi.fn(), getURL: (p: string) => `chrome-extension://x/${p}` },
+  runtime: { sendMessage: vi.fn(), getURL: (p: string) => `chrome-extension://x${p}` },
 }
 
 let root: Root
@@ -48,6 +49,9 @@ beforeEach(() => {
   chromeMock.storage.local.get.mockReset().mockResolvedValue({})
   chromeMock.storage.local.set.mockReset().mockResolvedValue(undefined)
   chromeMock.tabs.query.mockReset().mockResolvedValue([TAB])
+  chromeMock.tabs.create.mockReset()
+  chromeMock.tabs.update.mockReset().mockResolvedValue(undefined)
+  chromeMock.windows.update.mockReset().mockResolvedValue(undefined)
   chromeMock.scripting.executeScript.mockReset().mockResolvedValue([{ result: undefined }])
   chromeMock.runtime.sendMessage.mockReset().mockResolvedValue({ ok: true })
   root = createRoot(document.createElement("div"))
@@ -149,5 +153,30 @@ describe("usePopupSave", () => {
     })
     expect(current.permGranted).toBe(true)
     expect(chromeMock.storage.local.set).not.toHaveBeenCalled()
+  })
+
+  it("opens a new gallery tab when none is open", async () => {
+    await mount()
+    chromeMock.tabs.query.mockResolvedValue([])
+    await act(async () => {
+      await current.handleOpenGallery()
+    })
+    expect(chromeMock.tabs.query).toHaveBeenLastCalledWith({
+      url: "chrome-extension://x/gallery.html*",
+    })
+    expect(chromeMock.tabs.create).toHaveBeenCalledWith({
+      url: "chrome-extension://x/gallery.html",
+    })
+  })
+
+  it("focuses the existing gallery tab and window instead of opening another", async () => {
+    await mount()
+    chromeMock.tabs.query.mockResolvedValue([{ id: 9, windowId: 3 }])
+    await act(async () => {
+      await current.handleOpenGallery()
+    })
+    expect(chromeMock.tabs.update).toHaveBeenCalledWith(9, { active: true })
+    expect(chromeMock.windows.update).toHaveBeenCalledWith(3, { focused: true })
+    expect(chromeMock.tabs.create).not.toHaveBeenCalled()
   })
 })

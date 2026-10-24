@@ -5,9 +5,9 @@
   "description": "A visual gallery of fav-clicked sites",
   "author": "thbueno",
   "scripts": {
-    "dev": "wxt",
-    "build": "wxt build",
-    "zip": "wxt zip",
+    "dev": "node scripts/generate-popup-html.mjs && wxt",
+    "build": "node scripts/generate-popup-html.mjs && wxt build",
+    "zip": "node scripts/generate-popup-html.mjs && wxt zip",
     "postinstall": "wxt prepare",
     "test": "vitest run",
     "test:watch": "vitest",
