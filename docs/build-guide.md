@@ -309,7 +309,7 @@ These four have no blockers. Open separate sessions or branches.
 
 Paste this at the start of any new Claude session on this project:
 
-> Read CLAUDE.md before writing any code. Use pnpm (not npm). Use `@/` path alias for all internal imports. All design tokens in `src/style.css` only — no hardcoded hex, sizes, or radii in components. Any PR that adds a UI primitive must also update `src/tabs/design-system.tsx`.
+> Read CLAUDE.md before writing any code. Use pnpm (not npm). Use `@/` path alias for all internal imports. All design tokens in `src/style.css` only — no hardcoded hex, sizes, or radii in components. Any PR that adds a UI primitive must also update `src/entrypoints/design-system/App.tsx`.
 
 ---
 
