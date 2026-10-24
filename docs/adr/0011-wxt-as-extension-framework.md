@@ -2,7 +2,7 @@
 
 **Status:** accepted. Supersedes ADR 0002.
 
-We left Plasmo for two reasons: it was discontinued (it is no longer maintained, and has not been since 2025-05-17), and it caused build problems. It runs on Parcel 2.9. On this machine (glibc 2.44) its Parcel native addons abort at dev shutdown with heap corruption ("double free"), which corrupts the lmdb cache and makes the next `pnpm build` fail (PlasmoHQ/plasmo#1060, parcel-bundler/parcel#9926). We moved to WXT, which is Vite-based and actively maintained. WXT itself needs no install script beyond `esbuild`, so the lmdb, `@swc/core`, `msgpackr-extract` and `sharp` native addons are gone. `@parcel/watcher` stays installed only because sass (through vite and vitest) depends on it; its build script is switched off in `pnpm-workspace.yaml`.
+We left Plasmo for two reasons: it was discontinued (it is no longer maintained, with no release since 0.90.5 on 2025-05-17), and it caused build problems. It runs on Parcel 2.9. On this machine (glibc 2.44) its Parcel native addons abort at dev shutdown with heap corruption ("double free"), which corrupts the lmdb cache and makes the next `pnpm build` fail (PlasmoHQ/plasmo#1060). We moved to WXT, which is Vite-based and actively maintained. WXT itself needs no install script beyond `esbuild`, so the lmdb, `@swc/core`, `msgpackr-extract` and `sharp` native addons are gone. `@parcel/watcher` stays installed only because sass (through vite and vitest) depends on it; its build script is switched off in `pnpm-workspace.yaml`.
 
 ADR 0002's reason for using a framework still holds: WXT generates the manifest from code and handles the MV3 service-worker reload loop, which a bare Vite setup would leave to us.
 

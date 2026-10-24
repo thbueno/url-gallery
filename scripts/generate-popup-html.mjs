@@ -5,7 +5,7 @@
 // else. This script does NOT hardcode any token value — it parses the real
 // `:root { ... }` and dark-mode `:root { ... }` custom-property blocks out of
 // src/style.css and inlines exactly those declarations into the generated
-// popup.html's <style> tag. Everything else in the inline <style> block is
+// src/entrypoints/popup/index.html's <style> tag. Everything else in the inline <style> block is
 // layout-only (widths/heights/spacing) and references those same
 // `var(--token)` names, never a literal color/size value.
 //

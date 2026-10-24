@@ -56,7 +56,7 @@ pnpm run dev          # run scripts
 
 ## Build + extension ID
 
-- `pnpm dev` runs `wxt`; `pnpm build` writes `.output/chrome-mv3/`, which you load unpacked.
+- `pnpm dev` and `pnpm build` first run `scripts/generate-popup-html.mjs`, then `wxt` / `wxt build`. Always go through the pnpm scripts, never bare `wxt`, or the popup skeleton is missing. `pnpm build` writes `.output/chrome-mv3/`, which you load unpacked.
 - The manifest `key` is set only in production builds (`wxt.config.ts`), so an installed copy keeps one stable extension ID. Dev builds get a path-based ID with separate data. Never add the `key` to dev builds.
 
 ## Linting + formatting

@@ -17,7 +17,7 @@ export default function Popup() {
     handleSaveTab,
   } = usePopupSave()
 
-  // Removes the static popup.html skeleton (see scripts/generate-popup-html.mjs)
+  // Removes the static skeleton in the generated src/entrypoints/popup/index.html (see scripts/generate-popup-html.mjs)
   // in the same commit as the real popup's first paint, so the swap doesn't
   // cause a visible double-paint flash.
   useLayoutEffect(() => {
