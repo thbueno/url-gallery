@@ -229,7 +229,7 @@
   }
 
   /* Explicit toggle overrides — win over the OS-driven @media block above,
-     and over popup.html's inline critical-CSS `:root` duplicate (see
+     and over the popup's generated index.html inline critical-CSS `:root` duplicate (see
      scripts/generate-popup-html.mjs), because `html.dark` (element+class) is
      always more specific than a bare `:root`, regardless of source order.
      Class is set on <html> by src/store/themeStore.ts. */

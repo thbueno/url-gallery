@@ -1,3 +1,5 @@
+import { defineBackground } from "wxt/utils/define-background"
+
 import { categorize } from "@/lib/categorizer"
 import { parseMessage } from "@/lib/messages"
 import { extractOgImage } from "@/lib/og-image"
@@ -135,7 +137,9 @@ async function handleMessage(raw: unknown): Promise<{ ok: boolean; error?: strin
   }
 }
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  handleMessage(message).then(sendResponse)
-  return true // keep channel open for async response
+export default defineBackground(() => {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    handleMessage(message).then(sendResponse)
+    return true // keep channel open for async response
+  })
 })

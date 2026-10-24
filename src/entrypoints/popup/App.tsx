@@ -1,6 +1,3 @@
-import "@/style.css"
-import "@/store/themeStore"
-
 import { useLayoutEffect } from "react"
 
 import { PopupBody } from "@/components/popup/PopupBody"
@@ -24,7 +21,7 @@ export default function Popup() {
   // in the same commit as the real popup's first paint, so the swap doesn't
   // cause a visible double-paint flash.
   useLayoutEffect(() => {
-    document.getElementById("__plasmo_skeleton")?.remove()
+    document.getElementById("popup-skeleton")?.remove()
   }, [])
 
   return (
