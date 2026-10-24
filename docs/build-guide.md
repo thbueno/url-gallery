@@ -77,7 +77,7 @@ These four have no blockers. Open separate sessions or branches.
 
 **Model: Haiku** *(focused UI, no new deps)*
 
-> Add a collapse/expand toggle to the gallery sidebar in `src/tabs/gallery.tsx`.
+> Add a collapse/expand toggle to the gallery sidebar in `src/entrypoints/gallery/App.tsx`.
 >
 > - Toggle button uses Lucide `PanelLeftClose` (when open) and `PanelLeftOpen` (when collapsed)
 > - Collapsed: sidebar shrinks to 0 width (or a narrow icon rail — your choice), content hidden
@@ -99,7 +99,7 @@ These four have no blockers. Open separate sessions or branches.
 > Remove the floating in-page fav button and move fav-click to the extension toolbar icon.
 >
 > 1. Delete `src/contents/fav-button.tsx` entirely.
-> 2. In `src/background.ts`, add a `chrome.action.onClicked` listener. It must:
+> 2. In `src/entrypoints/background.ts`, add a `chrome.action.onClicked` listener. It must:
 >    - Use `chrome.scripting.executeScript` to inline-extract metadata from the active tab (OG image, favicon, title, og:type) — cannot import modules here, inline the extraction logic
 >    - Send the result through the existing `SAVE_REQUEST` handler
 > 3. Remove `<all_urls>` from required permissions if it was only needed for the content script. Add `scripting` and `activeTab` to permissions if not already present.
@@ -253,7 +253,7 @@ These four have no blockers. Open separate sessions or branches.
 
 **Model: Haiku** *(layout + chip rendering)*
 
-> Update the gallery top bar in `src/tabs/gallery.tsx`.
+> Update the gallery top bar in `src/entrypoints/gallery/App.tsx`.
 >
 > 1. Constrain the search input width — remove `flex-1`, give it a fixed or max-width (e.g. `max-w-xs`) so chips have room
 > 2. Render a chip for each pinned tag (from the `pinnedTags` Zustand slice) next to the search input
@@ -274,7 +274,7 @@ These four have no blockers. Open separate sessions or branches.
 > Add fluid enter animations when the tag filter changes.
 >
 > 1. `pnpm add framer-motion`
-> 2. In `src/tabs/gallery.tsx`, wrap the virtualizer row `div` with `motion.div` inside an `AnimatePresence`
+> 2. In `src/entrypoints/gallery/App.tsx`, wrap the virtualizer row `div` with `motion.div` inside an `AnimatePresence`
 > 3. Use a `filterKey` (derived from `activeTags.join(",")`) as part of the row key so `AnimatePresence` detects the filter change
 > 4. Animation: `initial={{ opacity: 0, y: 8 }}` → `animate={{ opacity: 1, y: 0 }}`, duration 180ms
 > 5. Stagger: `delay: Math.min(virtualRow.index, 10) * 0.03` — cap at 10 rows to avoid late-arriving rows at large counts
@@ -309,7 +309,7 @@ These four have no blockers. Open separate sessions or branches.
 
 Paste this at the start of any new Claude session on this project:
 
-> Read CLAUDE.md before writing any code. Use pnpm (not npm). Use `@/` path alias for all internal imports. All design tokens in `src/style.css` only — no hardcoded hex, sizes, or radii in components. Any PR that adds a UI primitive must also update `src/tabs/design-system.tsx`.
+> Read CLAUDE.md before writing any code. Use pnpm (not npm). Use `@/` path alias for all internal imports. All design tokens in `src/style.css` only — no hardcoded hex, sizes, or radii in components. Any PR that adds a UI primitive must also update `src/entrypoints/design-system/App.tsx`.
 
 ---
 

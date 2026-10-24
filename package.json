@@ -1,13 +1,13 @@
 {
   "name": "url-gallery",
-  "displayName": "URL Gallery",
   "version": "0.0.1",
   "description": "A visual gallery of fav-clicked sites",
   "author": "thbueno",
   "scripts": {
-    "dev": "node scripts/generate-popup-html.mjs && plasmo dev",
-    "build": "node scripts/generate-popup-html.mjs && plasmo build --hoist",
-    "package": "plasmo package",
+    "dev": "node scripts/generate-popup-html.mjs && wxt",
+    "build": "node scripts/generate-popup-html.mjs && wxt build",
+    "zip": "node scripts/generate-popup-html.mjs && wxt zip",
+    "postinstall": "wxt prepare",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome check --write ."
@@ -34,7 +34,6 @@
     "dexie": "^4.4.3",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.17.0",
-    "plasmo": "0.90.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^3.6.0",
@@ -48,7 +47,9 @@
     "@types/node": "^22",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.7.0",
     "@vitest/browser": "^4.1.8",
+    "@wxt-dev/module-react": "^1.2.2",
     "autoprefixer": "^10.4.20",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.1.1",
@@ -59,17 +60,14 @@
     "tailwindcss": "^3.4.16",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vite": "^6.4.5",
+    "vitest": "^2.1.8",
+    "wxt": "^0.21.4"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged"
   },
   "lint-staged": {
     "*.{ts,tsx}": "biome check --write --no-errors-on-unmatched"
-  },
-  "manifest": {
-    "action": {},
-    "permissions": ["storage", "tabs", "scripting", "activeTab"],
-    "optional_host_permissions": ["https://*/*"]
   }
 }

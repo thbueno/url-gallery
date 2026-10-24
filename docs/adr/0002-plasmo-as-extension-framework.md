@@ -1,6 +1,6 @@
 # Use Plasmo as the extension build framework
 
-**Status:** accepted
+**Status:** superseded by ADR 0011 (WXT). Kept as history; the build framework is now WXT.
 
 Building a Manifest V3 extension with a raw bundler (Vite/webpack) requires hand-managing the manifest, service-worker entry points, content-script injection, HMR quirks, and the MV3 service-worker reload loop. Plasmo abstracts all of this — it generates the manifest from code, provides out-of-the-box React support, and handles service-worker live-reloading during development.
 
