@@ -1,6 +1,5 @@
 {
   "name": "url-gallery",
-  "displayName": "URL Gallery",
   "version": "0.0.1",
   "description": "A visual gallery of fav-clicked sites",
   "author": "thbueno",
@@ -35,7 +34,6 @@
     "dexie": "^4.4.3",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.17.0",
-    "plasmo": "0.90.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^3.6.0",
