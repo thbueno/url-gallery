@@ -7,3 +7,7 @@ allowBuilds:
   msgpackr-extract: true
   sharp: true
   simple-git-hooks: true
+# @wxt-dev/module-react accepts plugin-react ^4 || ^5 || ^6, but v6 needs Vite 8.
+# Pin to v4 so it matches the Vite 6 we run (see ticket #54).
+overrides:
+  '@vitejs/plugin-react': ^4.7.0

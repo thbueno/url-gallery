@@ -27,6 +27,6 @@
     }
   },
   "files": {
-    "ignore": ["node_modules", ".plasmo", "build"]
+    "ignore": ["node_modules", ".plasmo", "build", ".wxt", ".output"]
   }
 }

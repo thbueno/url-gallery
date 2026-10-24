@@ -57,7 +57,7 @@ export function usePopupSave() {
   }, [])
 
   function handleOpenGallery() {
-    chrome.tabs.create({ url: chrome.runtime.getURL("tabs/gallery.html") })
+    chrome.tabs.create({ url: chrome.runtime.getURL("/gallery.html") })
   }
 
   async function handleGrantPermission() {
