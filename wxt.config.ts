@@ -16,4 +16,14 @@ export default defineConfig({
     optional_host_permissions: ["https://*/*"],
     ...(mode === "production" ? { key: PRODUCTION_PUBLIC_KEY } : {}),
   }),
+  hooks: {
+    // The design-system page is dev-only; WXT's include/exclude filters by
+    // browser, not mode, so drop it from production builds here.
+    "entrypoints:resolved": (wxt, entrypoints) => {
+      if (wxt.config.command === "build" && wxt.config.mode === "production") {
+        const i = entrypoints.findIndex((e) => e.name === "design-system")
+        if (i >= 0) entrypoints.splice(i, 1)
+      }
+    },
+  },
 })
